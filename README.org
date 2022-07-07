@@ -1,0 +1,4 @@
+* Hello world
+mvn compile
+mvn compile exec:java -Dexec.mainClass="com.mycom.app.helloworld.HelloWorld"
+
