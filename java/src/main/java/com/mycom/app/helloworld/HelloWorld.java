@@ -8,6 +8,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
 
 public class HelloWorld{
     public String sayHello(){
@@ -94,10 +95,16 @@ public class HelloWorld{
     }
 
     public static byte[] HexStringToBytes(String fromHexStr){
+	    System.out.println("******************************** This is the hex before parse ");
+	    System.out.println(fromHexStr);
 	    byte[] toByte = new byte[fromHexStr.length() / 2];
 	    for (int i = 0; i < toByte.length; i++) {
 		    toByte[i] = (byte) Integer.parseInt(fromHexStr.substring( i * 2, ( i + 1 ) * 2), 16);
+		    System.out.println(toByte[i]);
 	    }
+//            String str = Base64.getEncoder().encodeToString(toByte);
+//	    System.out.println(str);
+	    System.out.println("**********************************This is the hex after parse ");
 	    return toByte;
     }
 }

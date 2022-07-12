@@ -1,4 +1,13 @@
-* Hello world
+* java
+apt-get install maven
 mvn compile
 mvn compile exec:java -Dexec.mainClass="com.mycom.app.helloworld.HelloWorld"
+
+** PGP Key
+gpg --armor --output public-key.gpg --export syunka.tyo@gmail.com
+
+* Python
+** library
+pip3 install base32hex pycrypto
+
 

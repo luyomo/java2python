@@ -21,6 +21,19 @@
 
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
   </properties>
+  <dependencies>
+    <!-- The below repository should not be added here, other wise it cause the error: [class "org.bouncycastle.asn1.DEREncodable"'s signer information does not match signer information of other classes in the same package] -->
+    <!--dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>1.70</version>
+    </dependency-->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpg-jdk16</artifactId>
+      <version>1.46</version>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
