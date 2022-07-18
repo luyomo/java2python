@@ -36,6 +36,77 @@ public class PGPProcessor{
 	}
     }
 
+    public static void decryptFile() throws Exception{
+        PGPPrivateKey sKey              = null;
+        PGPPublicKeyEncryptedData pbe   = null;
+        PGPEncryptedDataList enc        = null;
+        FileInputStream inPrivKey       = null;
+        InputStream clear               = null;
+        PGPObjectFactory plainFact      = null;
+        ByteArrayOutputStream baos      = null;
+
+        try {
+            Security.addProvider(new BouncyCastleProvider());
+            
+	    String strSecuretKeyFile = "/home/pi/.ssh/gpg_test.pub";
+	    String strPGPFile = "/tmp/encryption.txt";
+            String strSecuretKeyPhrase = "1234Abcd";
+
+	    inPrivKey = new FileInputStream(strSecuretKeyFile);
+	    InputStream insPGPFile = new BufferedInputStream(new FileInputStream(strPGPFile));
+	    PGPObjectFactory pgpF = new PGPObjectFactory(PGPUtil.getDecoderStream(insPGPFile));
+	    Object o = pgpF.nextObject();
+	    enc = o instanceof PGPEncryptedDataList ? (PGPEncryptedDataList) o :(PGPEncryptedDataList) pgpF.nextObject();
+	    Iterator it = enc.getEncryptedDataObjects();
+
+	    while (sKey == null && it.hasNext()){
+                pbe = (PGPPublicKeyEncryptedData) it.next();
+		sKey = findSecretKey(inPrivKey, pbe.getKeyID(), strSecuretKeyPhrase.toCharArray());
+	    }
+
+	    if (sKey == null) {
+                throw new IllegalArgumentException("Secret key for message not found.");
+	    }
+	    System.out.println("Read Secret Key is done");
+
+	    clear = pbe.getDataStream(sKey, "BC");
+	    plainFact = new PGPObjectFactory(clear);
+	    Object message = plainFact.nextObject();
+
+	    if (message instanceof PGPCompressedData) {
+                PGPLiteralData ld = (PGPLiteralData) message;
+		InputStream unc = ld.getInputStream();
+		int ch;
+		while ( (ch = unc.read()) >= 0) {
+		    baos.write(ch);
+		}
+	    } else if (message instanceof PGPOnePassSignatureList){
+	        throw new PGPException("encrypted message contains a signed message - not literal data.");
+	    } else {
+                throw new PGPException("message is not a simple encrypted file - type unknown");
+	    }
+
+	    if (pbe.isIntegrityProtected()) {
+	        if (!pbe.verify()) {
+		    System.out.println("message failed integrity check");
+		}
+	    }else{
+                System.out.println("no message integrity check");
+	    }
+
+	    // Clear tet File Creation
+	    String strTxtFile = "/tmp/test.txt";
+	    baos.writeTo(new FileOutputStream(new File(strTxtFile)));
+	    System.out.println("Decryption is done");
+        } catch (PGPException e){
+            e.printStackTrace();
+            throw e;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
     public static void encryptFile() throws Exception{
         int buf_sz = 1<<14;
 
@@ -66,17 +137,23 @@ public class PGPProcessor{
             randomKey.nextBytes(bytes);
             System.out.println(Arrays.toString(bytes));
 
+            // Read public key
 	    FileInputStream keyIn = new FileInputStream("/home/pi/workspace/hello-world/java/public-key.gpg");
-	    File outfile = new File("/tmp/encryption.txt");
 
+            // Open the output file stream
+	    File outfile = new File("/tmp/encryption.txt");
 	    fo = new FileOutputStream(outfile, false);   // What the false mean
+
+            // Generate the random key
 	    peDG = new PGPEncryptedDataGenerator(PGPEncryptedData.AES_256, true, new SecureRandom(), "BC");
 
 	    peDG.addMethod(readPublicKey(keyIn));
 	    System.out.println("Read key is done");
 
+            // Open the input text
 	    peOS = peDG.open(fo, new byte[buf_sz]);
 
+            // Generate the instance of hte compressed data
 	    pcDG = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
             pcOS = pcDG.open(peOS);
 
@@ -119,6 +196,18 @@ public class PGPProcessor{
 //	    e.printStackTrace();
 //	    throw e;
 //	}
+    }
+
+    private static PGPPrivateKey findSecretKey(InputStream keyIn, long keyID, char[] pass){
+	    try {
+		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(keyIn));
+		System.out.println("keyID: " + keyID);
+		PGPSecretKey pgpSecKey = pgpSec.getSecretKey(keyID);
+		return pgpSecKey != null?pgpSecKey.extractPrivateKey(pass, "BC"):null;
+	    }catch (Exception e) {
+		e.printStackTrace();
+	    } 
+	    return null;
     }
 
     private static PGPPublicKey readPublicKey(InputStream in) throws IOException, PGPException {
