@@ -29,7 +29,8 @@ public class PGPProcessor{
     public static void main(String[] args){
         System.out.println(new HelloWorld().sayHello());
 	try {
-	    encryptFile();
+	     //encryptFile();
+            decryptFile();
 	} catch(Exception e){
 	    e.printStackTrace();
 //	    throw e;
@@ -48,15 +49,20 @@ public class PGPProcessor{
         try {
             Security.addProvider(new BouncyCastleProvider());
             
-	    String strSecuretKeyFile = "/home/pi/.ssh/gpg_test.pub";
+	    String strSecuretKeyFile = "/home/pi/workspace/hello-world/java/private-key.pgp";
 	    String strPGPFile = "/tmp/encryption.txt";
             String strSecuretKeyPhrase = "1234Abcd";
 
 	    inPrivKey = new FileInputStream(strSecuretKeyFile);
+	    System.out.println("01. read the key");
 	    InputStream insPGPFile = new BufferedInputStream(new FileInputStream(strPGPFile));
+	    System.out.println("02. read the pgp file");
 	    PGPObjectFactory pgpF = new PGPObjectFactory(PGPUtil.getDecoderStream(insPGPFile));
+	    System.out.println("03. read object factory");
 	    Object o = pgpF.nextObject();
+	    System.out.println("04. read object factory");
 	    enc = o instanceof PGPEncryptedDataList ? (PGPEncryptedDataList) o :(PGPEncryptedDataList) pgpF.nextObject();
+	    System.out.println("05. read object factory");
 	    Iterator it = enc.getEncryptedDataObjects();
 
 	    while (sKey == null && it.hasNext()){
@@ -73,7 +79,15 @@ public class PGPProcessor{
 	    plainFact = new PGPObjectFactory(clear);
 	    Object message = plainFact.nextObject();
 
+            
 	    if (message instanceof PGPCompressedData) {
+                PGPCompressedData cData = (PGPCompressedData) message;
+                PGPObjectFactory pgpFact = new PGPObjectFactory(cData.getDataStream());
+                message = pgpFact.nextObject();
+            }
+
+            baos = new ByteArrayOutputStream();
+	    if (message instanceof PGPLiteralData) {
                 PGPLiteralData ld = (PGPLiteralData) message;
 		InputStream unc = ld.getInputStream();
 		int ch;
@@ -129,13 +143,13 @@ public class PGPProcessor{
 	    Security.addProvider(new BouncyCastleProvider());
 
             // Generate the random seeds
-	    SecureRandom randomKey = new SecureRandom();
-            byte[] bytes = randomKey.generateSeed(16);;
-	    System.out.println(randomKey.toString());
-            randomKey.nextBytes(bytes);
-            System.out.println(Arrays.toString(bytes));
-            randomKey.nextBytes(bytes);
-            System.out.println(Arrays.toString(bytes));
+	    //SecureRandom randomKey = new SecureRandom();
+            //byte[] bytes = randomKey.generateSeed(16);;
+	    //System.out.println(randomKey.toString());
+            //randomKey.nextBytes(bytes);
+            //System.out.println(Arrays.toString(bytes));
+            //randomKey.nextBytes(bytes);
+            //System.out.println(Arrays.toString(bytes));
 
             // Read public key
 	    FileInputStream keyIn = new FileInputStream("/home/pi/workspace/hello-world/java/public-key.gpg");
@@ -191,11 +205,24 @@ public class PGPProcessor{
 	} catch (IOException e) {
 	    e.printStackTrace();
 	    throw e;
-	}
-//       	catch (Exception e) {
-//	    e.printStackTrace();
-//	    throw e;
-//	}
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw e;
+	} finally {
+            try {
+                bw.flush();
+                bw.close();
+                ow.close();
+                plOS.close();
+                pcOS.close();
+                peOS.close();
+                fo.close();
+                in.close();
+                inSrd.close();
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static PGPPrivateKey findSecretKey(InputStream keyIn, long keyID, char[] pass){

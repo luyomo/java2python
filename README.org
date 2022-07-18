@@ -4,7 +4,8 @@ mvn compile
 mvn compile exec:java -Dexec.mainClass="com.mycom.app.helloworld.HelloWorld"
 
 ** PGP Key
-gpg --armor --output public-key.gpg --export syunka.tyo@gmail.com
+gpg --armor --output public-key.gpg  --export syunka.tyo@gmail.com
+gpg --armor --output private-key.pgp --export-secret-key syunka.tyo@gmail.com
 
 * Python
 ** library
