@@ -12,3 +12,20 @@ gpg --armor --output private-key.pgp --export-secret-key syunka.tyo@gmail.com
 pip3 install base32hex pycrypto
 
 
+* Encryption analysis
+
+sudo apt-get install pgpdump
+
+#+BEGIN_SRC
+pgpdump /tmp/encryption.zip 
+Old: Public-Key Encrypted Session Key Packet(tag 1)(396 bytes)
+        New version(3)
+        Key ID - 0xE961A14BAEA235F0
+        Pub alg - RSA Encrypt or Sign(pub 1)
+        RSA m^e mod n(3072 bits) - ...
+                -> m = sym alg(1 byte) + checksum(2 bytes) + PKCS-1 block type 02
+New: Symmetrically Encrypted and MDC Packet(tag 18)(117 bytes)
+        Ver 1
+        Encrypted data [sym alg is specified in pub-key encrypted session key]
+                (plain text + MDC SHA1(20 bytes))
+#+END_SRC
