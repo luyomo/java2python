@@ -29,3 +29,26 @@ New: Symmetrically Encrypted and MDC Packet(tag 18)(117 bytes)
         Encrypted data [sym alg is specified in pub-key encrypted session key]
                 (plain text + MDC SHA1(20 bytes))
 #+END_SRC
+
+* 2020-07-20
+There are some conflicts of the dependent module. 
+The TransbizSignature.java looks that it use bcpg-jdkl15on/1.51 because the PGPObjectFactory's constructor is compatiable this version. 
+But at the same time, PGPProcessor is not compatible to the above version because of the below error. From this info, the package is compiled to different jar package. But so far I just saw only one jar package. Need to dig into detail for the solution.
+#+BEGIN_SRC
+[ERROR] /home/pi/workspace/hello-world/java/src/main/java/com/mycom/app/helloworld/PGPProcessor.java:[73,24] クラス org.bouncycastle.openpgp.PGPPublicKeyEncryptedDataのメソッド getDataStreamは指定された型に適用できません。
+[ERROR]   期待値: org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory
+[ERROR]   検出値: org.bouncycastle.openpgp.PGPPrivateKey,java.lang.String
+[ERROR]   理由: 実引数リストと仮引数リストの長さが異なります
+[ERROR] /home/pi/workspace/hello-world/java/src/main/java/com/mycom/app/helloworld/PGPProcessor.java:[157,20] PGPEncryptedDataGeneratorに適切なコンストラクタが見つかりません(int,boolean,java.security.SecureRandom,java.lang.String)
+[ERROR]     コンストラクタ org.bouncycastle.openpgp.PGPEncryptedDataGenerator.PGPEncryptedDataGenerator(org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder)は使用できません
+[ERROR]       (実引数リストと仮引数リストの長さが異なります)
+[ERROR]     コンストラクタ org.bouncycastle.openpgp.PGPEncryptedDataGenerator.PGPEncryptedDataGenerator(org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder,boolean)は使用でき
+ません
+[ERROR]       (実引数リストと仮引数リストの長さが異なります)
+[ERROR] /home/pi/workspace/hello-world/java/src/main/java/com/mycom/app/helloworld/PGPProcessor.java:[159,41] 不適合な型: org.bouncycastle.openpgp.PGPPublicKeyをorg.bouncycastle.openpgp.operator.PGPKeyEncryptionMethodGeneratorに変換できません:
+[ERROR] /home/pi/workspace/hello-world/java/src/main/java/com/mycom/app/helloworld/PGPProcessor.java:[228,51] クラス org.bouncycastle.openpgp.PGPSecretKeyのメソッド extractPrivateKeyは指定された型に適用できません。
+[ERROR]   期待値: org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor
+[ERROR]   検出値: char[],java.lang.String
+[ERROR]   理由: 実引数リストと仮引数リストの長さが異なります
+[ERROR] -> [Help 1]
+#+END_SRC

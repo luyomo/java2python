@@ -29,7 +29,7 @@ public class PGPProcessor{
     public static void main(String[] args){
         System.out.println(new HelloWorld().sayHello());
 	try {
-	     //encryptFile();
+	    //encryptFile();
             decryptFile();
 	} catch(Exception e){
 	    e.printStackTrace();
@@ -54,15 +54,10 @@ public class PGPProcessor{
             String strSecuretKeyPhrase = "1234Abcd";
 
 	    inPrivKey = new FileInputStream(strSecuretKeyFile);
-	    System.out.println("01. read the key");
 	    InputStream insPGPFile = new BufferedInputStream(new FileInputStream(strPGPFile));
-	    System.out.println("02. read the pgp file");
 	    PGPObjectFactory pgpF = new PGPObjectFactory(PGPUtil.getDecoderStream(insPGPFile));
-	    System.out.println("03. read object factory");
 	    Object o = pgpF.nextObject();
-	    System.out.println("04. read object factory");
 	    enc = o instanceof PGPEncryptedDataList ? (PGPEncryptedDataList) o :(PGPEncryptedDataList) pgpF.nextObject();
-	    System.out.println("05. read object factory");
 	    Iterator it = enc.getEncryptedDataObjects();
 
 	    while (sKey == null && it.hasNext()){
@@ -109,7 +104,7 @@ public class PGPProcessor{
 	    }
 
 	    // Clear tet File Creation
-	    String strTxtFile = "/tmp/test.txt";
+	    String strTxtFile = "/tmp/decryption.txt";
 	    baos.writeTo(new FileOutputStream(new File(strTxtFile)));
 	    System.out.println("Decryption is done");
         } catch (PGPException e){
