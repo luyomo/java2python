@@ -228,8 +228,10 @@ class Common:
         #db_token = self.provide_token('https://database.windows.net', self.__app_id, self.__client_secret)
         try:
             driver = "{ODBC Driver 17 for SQL Server}"
-            sqlserver_url = "sqlsr-fas-dev-001.database.windows.net"
-            dbname = "sqldb-fas-dev"
+            #sqlserver_url = "sqlsr-fas-dev-001.database.windows.net"
+            sqlserver_url = "jaytestdbserver.database.windows.net"
+            #dbname = "sqldb-fas-dev"
+            dbname = "jaytestdb"
             connection_string = 'DRIVER='+driver+';SERVER='+sqlserver_url+';DATABASE='+dbname
             if os.getenv("MSI_SECRET"):
                 logging.info(f'Connection: MSI_SECRET')
