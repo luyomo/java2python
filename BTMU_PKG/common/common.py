@@ -226,21 +226,20 @@ class Common:
 
     def FetchDBConn(self):
         #db_token = self.provide_token('https://database.windows.net', self.__app_id, self.__client_secret)
-        driver = "{ODBC Driver 17 for SQL Server}"
-        sqlserver_url = "sqlsr-fas-dev-001.database.windows.net"
-        dbname = "sqldb-fas-dev"
-        connection_string = 'DRIVER='+driver+';SERVER='+sqlserver_url+';DATABASE='+dbname
-        if os.getenv("MSI_SECRET"):
-            logging.info(f'Connection: MSI_SECRET')
-            logging.info(f"The MSI_SECRET is {os.getenv('MSI_SECRET')}")
-            try:
+        try:
+            driver = "{ODBC Driver 17 for SQL Server}"
+            sqlserver_url = "sqlsr-fas-dev-001.database.windows.net"
+            dbname = "sqldb-fas-dev"
+            connection_string = 'DRIVER='+driver+';SERVER='+sqlserver_url+';DATABASE='+dbname
+            if os.getenv("MSI_SECRET"):
+                logging.info(f'Connection: MSI_SECRET')
+                logging.info(f"The MSI_SECRET is {os.getenv('MSI_SECRET')}")
+            
                 conn = pyodbc.connect(connection_string+';Authentication=ActiveDirectoryMsi')
-            except pyodbc.Error as ex:
-                sqlstate = ex.args[0]
-                logging.info(f"The error is {ex}")
-        else:
-            logging.info(f"No MSI_SECRET")
-            return
+            
+            else:
+                logging.info(f"No MSI_SECRET")
+                return
             #SQL_COPT_SS_ACCESS_TOKEN = 1256
 
             #exptoken = b''
@@ -251,10 +250,13 @@ class Common:
             #tokenstruct = struct.pack("=i", len(exptoken)) + exptoken
             #conn = pyodbc.connect(connection_string, attrs_before={SQL_COPT_SS_ACCESS_TOKEN: tokenstruct})
             #logging.info(f'Connection: Token')
-        cursor = conn.cursor()
-        # cursor.execute(f'TRUNCATE TABLE {schema}.Employee_AAD')
-        for index, row in src_df.iterrows():
-            cursor.execute(f"Exec select max(run_num) from dxc.transbiz_his")
-        conn.commit()
-        cursor.close()
+            cursor = conn.cursor()
+            # cursor.execute(f'TRUNCATE TABLE {schema}.Employee_AAD')
+            for index, row in src_df.iterrows():
+                cursor.execute(f"Exec select max(run_num) from dxc.transbiz_his")
+            conn.commit()
+            cursor.close()
+        except pyodbc.Error as ex:
+                sqlstate = ex.args[0]
+                logging.info(f"The error is {ex}")
 
