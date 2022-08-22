@@ -231,9 +231,13 @@ class Common:
         dbname = "sqldb-fas-dev"
         connection_string = 'DRIVER='+driver+';SERVER='+sqlserver_url+';DATABASE='+dbname
         if os.getenv("MSI_SECRET"):
-            conn = pyodbc.connect(connection_string+';Authentication=ActiveDirectoryMsi')
             logging.info(f'Connection: MSI_SECRET')
             logging.info(f"The MSI_SECRET is {os.getenv('MSI_SECRET')}")
+            try:
+                conn = pyodbc.connect(connection_string+';Authentication=ActiveDirectoryMsi')
+            except pyodbc.Error as ex:
+                sqlstate = ex.args[0]
+                logging.info(f"The error is {ex}")
         else:
             logging.info(f"No MSI_SECRET")
             return
