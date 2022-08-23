@@ -232,6 +232,7 @@ class Common:
             #sqlserver_url = "jaytestdbserver.database.windows.net"
             sqlserver_url = "jaytestdbserver02.database.windows.net"
             #dbname = "sqldb-fas-dev"
+
             dbname = "jaytestdb"
             connection_string = 'DRIVER='+driver+';SERVER='+sqlserver_url+';DATABASE='+dbname
             if os.getenv("MSI_SECRET"):

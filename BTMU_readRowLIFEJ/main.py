@@ -4,7 +4,7 @@ import azure.functions as func
 from azure.storage.fileshare import ShareServiceClient
 from azure.storage.fileshare import ShareDirectoryClient
 import pyodbc
-import os 
+import os
 
 from BTMU_PKG.upload.readRowLIFEJ import readRowLIFEJ
 
@@ -20,28 +20,31 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         else:
             name = req_body.get('name')
 
-    configFile = req.params.get('ConfigFile')
-    if not configFile:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            configFile = req_body.get('ConfigFile')
-
-    __connection_string = os.getenv("AzureWebJobsStorage")
-    #__share_name = os.getenv("AzureFASShareName")
-    __local_dir = os.getenv("AzureFuncLocalDir")
-
-    
-
-    logging.info(f"The variable is {__connection_string}")
-    #logging.info(f"The variable is {__share_name}")
-    if __local_dir == None: __local_dir = "/tmp"
-    logging.info(f"Local dir is {__local_dir}")
-
-    insLogLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir)
+    insLogLIFEJ = readRowLIFEJ("test", "test", "test")
     insLogLIFEJ.FetchDBConn()
+
+    #configFile = req.params.get('ConfigFile')
+    #if not configFile:
+    #    try:
+    #        req_body = req.get_json()
+    #    except ValueError:
+    #        pass
+    #    else:
+    #        configFile = req_body.get('ConfigFile')
+
+    #__connection_string = os.getenv("AzureWebJobsStorage")
+    ##__share_name = os.getenv("AzureFASShareName")
+    #__local_dir = os.getenv("AzureFuncLocalDir")
+
+
+
+    #logging.info(f"The variable is {__connection_string}")
+    ##logging.info(f"The variable is {__share_name}")
+    #if __local_dir == None: __local_dir = "/tmp"
+    #logging.info(f"Local dir is {__local_dir}")
+
+    #insLogLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir)
+    #insLogLIFEJ.FetchDBConn()
     #insLogLIFEJ = readRowLIFEJ("fas-etl")
 
     #insLogLIFEJ.execute()
