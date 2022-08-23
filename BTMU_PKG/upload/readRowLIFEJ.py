@@ -1,5 +1,5 @@
 from ..common.common import Common
-import os
+import os, logging
 from datetime import datetime
 from datetime import timedelta
 #import numpy as np
@@ -365,5 +365,7 @@ class readRowLIFEJ(Common):
       def dbExecute(cursor):
         cursor.execute("select 1")
         row = cursor.fetchone()
+        logging.info(f"The result inside dbExecute is {row}")
         return row if row else 0
-      self.executeDB(dbExecute)
+      ret = self.executeDB(dbExecute)
+      logging.info(f"The result after executeDB is {ret}")

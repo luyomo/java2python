@@ -241,6 +241,7 @@ class Common:
         self.__authority_url = authorityUrl
 
     def executeDB(self, funcDBProc):
+        ret = {}
         driver = "{ODBC Driver 17 for SQL Server}"
         connection_string = f"DRIVER={driver};SERVER={self.__sqlserver_url};DATABASE={self.__dbname}"
         try:
@@ -263,6 +264,8 @@ class Common:
                 conn = pyodbc.connect(connection_string, attrs_before={SQL_COPT_SS_ACCESS_TOKEN: tokenstruct})
                 logging.info(f'Connection: Token')
             cursor = conn.cursor()
+            ret = funcDBProc(cursor)
+            logging.info(f"The result is {ret}")
         # cursor.execute(f'TRUNCATE TABLE {schema}.Employee_AAD')
         #for index, row in src_df.iterrows():
         #    cursor.execute(f"Exec {schema}.usp_Employee_Insert_Update ?,?,?,?,?,?", row.EmployeeId, row.JPUserId,
@@ -272,6 +275,7 @@ class Common:
         except pyodbc.Error as ex:
             sqlstate = ex.args[0]
             logging.info(f"Failed on the db: {sqlstate}")
+        return ret
 
     def FetchDBConn(self):
         #db_token = self.provide_token('https://database.windows.net', self.__app_id, self.__client_secret)
