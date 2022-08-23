@@ -65,9 +65,9 @@ class Common:
             _configData = configData['Tail']
         if line['DataType'] == "9":
             _configData = configData['End']
-        
+
         for key in _configData: retStr += line[key]
-        
+
         return retStr
 
     def uploadData(self, configFile, data, dataFile, encoding):
@@ -91,7 +91,7 @@ class Common:
                 _configData = configData['Tail']
             if _row['DataType'] == "9":
                 _configData = configData['End']
-            
+
             for key in _configData: newFile.write(_row[key])
             newFile.write("\n")
         #newFile.write("9\n")
@@ -115,7 +115,7 @@ class Common:
             newFile.write(_row)
             newFile.write("\n")
         newFile.close()
-        
+
         file_dest_client = ShareFileClient.from_connection_string(conn_str=self.connectionStr, share_name=retFileName['shareFile'], file_path=retFileName['fileName'])
         with open(localFileName, "rb") as source_file:
             file_dest_client.upload_file(source_file)
@@ -126,13 +126,13 @@ class Common:
 
     def readConfig(self, configFile):
         print(f" --------------- The file to be parsed <{configFile}>")
-        
+
         downloadFile = self.readShareFile(configFile)
 
         with open(downloadFile,  encoding="utf-8") as file:
             metaData = json.load(file)
 
-        return metaData 
+        return metaData
 
     def parseFile(self, configFile, dataFile, encoding):
         arrayData = []
@@ -229,16 +229,17 @@ class Common:
         try:
             driver = "{ODBC Driver 17 for SQL Server}"
             #sqlserver_url = "sqlsr-fas-dev-001.database.windows.net"
-            sqlserver_url = "jaytestdbserver.database.windows.net"
+            #sqlserver_url = "jaytestdbserver.database.windows.net"
+            sqlserver_url = "jaytestdbserver02.database.windows.net"
             #dbname = "sqldb-fas-dev"
             dbname = "jaytestdb"
             connection_string = 'DRIVER='+driver+';SERVER='+sqlserver_url+';DATABASE='+dbname
             if os.getenv("MSI_SECRET"):
                 logging.info(f'Connection: MSI_SECRET')
                 logging.info(f"The MSI_SECRET is {os.getenv('MSI_SECRET')}")
-            
+
                 conn = pyodbc.connect(connection_string+';Authentication=ActiveDirectoryMsi')
-            
+
             else:
                 logging.info(f"No MSI_SECRET")
                 return
