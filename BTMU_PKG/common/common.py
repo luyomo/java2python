@@ -256,9 +256,13 @@ class Common:
             #logging.info(f'Connection: Token')
             cursor = conn.cursor()
             # cursor.execute(f'TRUNCATE TABLE {schema}.Employee_AAD')
-            for index, row in src_df.iterrows():
-                cursor.execute(f"Exec select max(run_num) from dxc.transbiz_his")
-            conn.commit()
+            query = "select * from pythontest.test01"
+            cursor.execute(query)
+            row = cursor.fetchone()
+            while row:
+                logging.info(row)
+                row = cursor.fetchone()
+
             cursor.close()
         except pyodbc.Error as ex:
                 sqlstate = ex.args[0]
