@@ -361,3 +361,9 @@ class readRowLIFEJ(Common):
       """
       return dict(sorted(inArr.items(), key=lambda item: f"{item[1][1:2]}{item[1]}")).values()
       
+    def fetchLatestRunNum(self):
+      def dbExecute(cursor):
+        cursor.execute("select 1")
+        row = cursor.fetchone()
+        return row if row else 0
+      self.executeDB(dbExecute)

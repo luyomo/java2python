@@ -4,21 +4,12 @@ import azure.functions as func
 from azure.storage.fileshare import ShareServiceClient
 from azure.storage.fileshare import ShareDirectoryClient
 import pyodbc
-import os 
+import os, json
 
 from BTMU_PKG.upload.readRowLIFEJ import readRowLIFEJ
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
-
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
 
     configFile = req.params.get('ConfigFile')
     if not configFile:
@@ -29,10 +20,61 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         else:
             configFile = req_body.get('ConfigFile')
 
-    __connection_string = os.getenv("AzureWebJobsStorage")
-    #__share_name = os.getenv("AzureFASShareName")
-    __local_dir = os.getenv("AzureFuncLocalDir")
+    # The App Id and ClientSecret are used for testing. 
+    # The prod app use MSI_SECRET as the DB crentials while the 
+    # test environment use the 
+    app_id = req.params.get('AppId')
+    if not app_id:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            return func.HttpResponse("AppId value is an error.", status_code=400)
+        else:
+            app_id = req_body.get('AppId')
 
+    client_secret = req.params.get('ClientSecret')
+    if not client_secret:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            return func.HttpResponse("ClientSecret value is an error.", status_code=400)
+        else:
+            client_secret = req_body.get('ClientSecret')
+
+    sqlserver_url = req.params.get('SQLServerUrl')
+    if not sqlserver_url:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            return func.HttpResponse("SQLServerUrl value is an error.", status_code=400)
+        else:
+            sqlserver_url = req_body.get('SQLServerUrl')
+
+    dbname = req.params.get('DBName')
+    if not dbname:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            return func.HttpResponse("DBName value is an error.", status_code=400)
+        else:
+            dbname = req_body.get('DBName')
+
+    schema = req.params.get('Schema')
+    if not schema:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            return func.HttpResponse("Schema value is an error.", status_code=400)
+        else:
+            schema = req_body.get('Schema')
+
+    __connection_string = os.getenv("AzureWebJobsStorage")
+
+    #__share_name = os.getenv("AzureFASShareName")
+    # This is used for the testing. The test dir will be used variable because
+    # in the windows, we have to define one while in the unix prod, the /tmp is used
+    # to keep the temporary file.
+    __local_dir = os.getenv("AzureFuncLocalDir")
     
 
     logging.info(f"The variable is {__connection_string}")
@@ -41,15 +83,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"Local dir is {__local_dir}")
 
     insLogLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir)
-    insLogLIFEJ.FetchDBConn()
+    insLogLIFEJ.setDBConfig("jaytestdbserver.database.windows.net", "jaytestdb", app_id, client_secret, "")
+    insLogLIFEJ.fetchLatestRunNum()
+    #insLogLIFEJ.FetchDBConn()
     #insLogLIFEJ = readRowLIFEJ("fas-etl")
 
     #insLogLIFEJ.execute()
 
-    if name:
-        return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
-    else:
-        return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-             status_code=200
+    return func.HttpResponse(
+            json.dumps({"Status": "Success"}),
+            status_code=200,
+            mimetype="application/json"
         )
+    
