@@ -2,7 +2,7 @@ from ..common.common import Common
 import os
 from datetime import datetime
 from datetime import timedelta
-import numpy as np
+
 
 class fetchfromGL(Common):
     def __init__(self, configFile, storageConnectionStr, localDir):
@@ -95,16 +95,4 @@ class fetchfromGL(Common):
         print(f"The modified data is {arrModifiedData}")
         self.uploadData(strFileFormat, toModifiedData['data'],f"{strFileModified}/{toModifiedData['fileName']}", strEncoding)
 
-    def findYYYYMMDD(self, strPayDateFrom, strDays, strMMDD):
-        """
-        Example:
-          (20220801, 31, 0804) -> 20220804 
-          (20220801, 31, 0831) -> 20220831
-          (20220801, 31, 0901) -> ''
-        """
-        payDateFrom = datetime.strptime(strPayDateFrom, '%Y%m%d')
-        for idx in np.arange(1, int(strDays)):
-            theDate = payDateFrom + timedelta(days=int(idx))
-            if theDate.strftime('%m%d') == strMMDD:
-                return theDate.strftime('%Y%m%d')
-        return ""
+    

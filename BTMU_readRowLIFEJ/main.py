@@ -84,11 +84,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     insLogLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir)
     insLogLIFEJ.setDBConfig("jaytestdbserver.database.windows.net", "jaytestdb", app_id, client_secret, "")
-    insLogLIFEJ.fetchLatestRunNum()
-    #insLogLIFEJ.FetchDBConn()
     #insLogLIFEJ = readRowLIFEJ("fas-etl")
+    #insLogLIFEJ.fetchLatestRunNum()
+    #insLogLIFEJ.FetchDBConn()
+    
 
-    #insLogLIFEJ.execute()
+    insLogLIFEJ.execute()
 
     return func.HttpResponse(
             json.dumps({"Status": "Success"}),

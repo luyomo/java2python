@@ -84,6 +84,7 @@ class readRowLIFEJ(Common):
         """
         mpRtn = {}
         vecRtn = []
+        vecTransRow = []
         vecFileAccounts = []
         mpAll0 = {}
         mpSameAccount = {}
@@ -207,7 +208,9 @@ class readRowLIFEJ(Common):
                   lngSumAmount  = lngSumAmount + int(_line['Amount'])
                   lngSumCount += 1
                 vecRtn.append(f",{strProcessDate},{strBankCode},{_header['ProcessDate']},{self.getLineStr(fileFormatConfig, _line)},{strRowType},")
-              
+                # Todo : replace start date 
+                vecTransRow.append({"process_date": strProcessDate, "bank_code": _line['BankCode'], "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']), "row_detail": self.getLineStr(fileFormatConfig, _line), "row_type": strRowType})
+
               if _line['DataType'] == "8":
                 _line['TotalAcount'] = self.LeftPadZero(lngSumCount, fileFormatConfig['Tail']['TotalAcount'])
                 _line['TotalAmount'] = self.LeftPadZero(lngSumAmount, fileFormatConfig['Tail']['TotalAmount'])
@@ -237,6 +240,8 @@ class readRowLIFEJ(Common):
         self.txtFileWrite(vecBankCodeFile, strFileMarkBankcode, strEncoding)
 
         self.txtFileWrite([str(len(vecBankCodeFile))], strFileMarkWaiting, strEncoding)
+
+        self.insertTransLog(vecTransRow)
 
         return {
           "DBROW" : vecRtn,
@@ -369,3 +374,17 @@ class readRowLIFEJ(Common):
         return row if row else 0
       ret = self.executeDB(dbExecute)
       logging.info(f"The result after executeDB is {ret}")
+
+    def insertTransLog(self, _data):
+      def dbExecute(cursor):
+        for _idx, _line in enumerate(_data):
+          __query = print(f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['row_detail']}', '{_line['row_type']}', current_timestamp, current_user)")
+          cursor.execute(__query)
+        
+      ret = self.executeDB(dbExecute)
+      logging.info(f"The result after executeDB is {ret}")
+
+
+
+
+        

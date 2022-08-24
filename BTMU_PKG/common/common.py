@@ -10,6 +10,8 @@ import time
 import pyodbc
 import os, adal, struct
 from datetime import datetime
+from datetime import timedelta
+import numpy as np
 
 class Common:
     def __init__(self, configFile, storageConnectionStr, localDir) -> None:
@@ -239,6 +241,20 @@ class Common:
         self.__app_id = appId
         self.__client_secret = clientSecret
         self.__authority_url = authorityUrl
+
+    def findYYYYMMDD(self, strPayDateFrom, strDays, strMMDD):
+        """
+        Example:
+          (20220801, 31, 0804) -> 20220804 
+          (20220801, 31, 0831) -> 20220831
+          (20220801, 31, 0901) -> ''
+        """
+        payDateFrom = datetime.strptime(strPayDateFrom, '%Y%m%d')
+        for idx in np.arange(1, int(strDays)):
+            theDate = payDateFrom + timedelta(days=int(idx))
+            if theDate.strftime('%m%d') == strMMDD:
+                return theDate.strftime('%Y%m%d')
+        return ""
 
     def executeDB(self, funcDBProc):
         ret = {}
