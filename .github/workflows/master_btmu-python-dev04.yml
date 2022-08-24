@@ -65,6 +65,6 @@ jobs:
           app-name: 'btmu-python-dev04'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_9ECB197207A74645AB2921451A6629EF }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_EA19DC0337764700AB4EDCFC606D5B0F }}
           scm-do-build-during-deployment: true
           enable-oryx-build: true
