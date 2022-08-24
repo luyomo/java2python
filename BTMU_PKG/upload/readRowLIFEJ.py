@@ -86,6 +86,7 @@ class readRowLIFEJ(Common):
         mpRtn = {}
         vecRtn = []
         vecTransRow = []
+        vecTransLog = []
         vecFileAccounts = []
         mpAll0 = {}
         mpSameAccount = {}
@@ -195,6 +196,7 @@ class readRowLIFEJ(Common):
                   mpSameAccount[fileName] = fileName
 
                   vecDeleteRow.append(f",{strProcessDate},,{strBankCode},{_header['ProcessDate']},SAME ACCOUNT,1,{_line['Amount']},{self.getLineStr(fileFormatConfig, _line)},")
+                  vecTransLog.append({"process_date": strProcessDate, "bank_code": strBankCode, "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']), "record_type": "SAME ACCOUNT", "row_count": 1, "row_amount": _line['Amount'], "row_detail": self.getLineStr(fileFormatConfig, _line)})
                 # If the accout is 0000000
                 elif _header['Account'] == "0000000":
                   strRowType = "ALL0"
@@ -202,6 +204,7 @@ class readRowLIFEJ(Common):
                   mpAll0[fileName] = fileName
 
                   vecDeleteRow.append(f",{strProcessDate},,{strBankCode},{_header['ProcessDate']},0000000 ACCOUNT,1,{_line['Amount']},{self.getLineStr(fileFormatConfig, _line)},")
+                  vecTransLog.append({"process_date": strProcessDate, "bank_code": strBankCode, "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']), "record_type": "0000000 ACCOUNT", "row_count": 1, "row_amount": _line['Amount'], "row_detail": self.getLineStr(fileFormatConfig, _line)})
                 # General case
                 else:
                   strRowType = "2"
@@ -242,7 +245,9 @@ class readRowLIFEJ(Common):
 
         self.txtFileWrite([str(len(vecBankCodeFile))], strFileMarkWaiting, strEncoding)
 
-        self.insertTransLog(vecTransRow)
+        self.insertTransRow(vecTransRow)
+
+        self.insertTransLog(vecTransLog)
 
         return {
           "DBROW" : vecRtn,
@@ -376,12 +381,11 @@ class readRowLIFEJ(Common):
       ret = self.executeDB(dbExecute)
       logging.info(f"The result after executeDB is {ret}")
 
-    def insertTransLog(self, _data):
+    def insertTransRow(self, _data):
       def dbExecute(cursor):
         try:
           for _idx, _line in enumerate(_data):
             __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', '{_line['row_type']}', current_timestamp, current_user)"
-            #__query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', ?, '{_line['row_type']}', current_timestamp, current_user)"
             logging.info(f"the query is {__query}")
             cursor.execute(__query)
         except pyodbc.Error as ex:
@@ -391,6 +395,19 @@ class readRowLIFEJ(Common):
       ret = self.executeDB(dbExecute)
       logging.info(f"The result after executeDB is {ret}")
 
+    def insertTransLog(self, _data):
+      def dbExecute(cursor):
+        try:
+          for _idx, _line in enumerate(_data):
+            __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, current_user)"
+            logging.info(f"the query is {__query}")
+            cursor.execute(__query)
+        except pyodbc.Error as ex:
+            sqlstate = ex.args[0]
+            logging.info(f"Failed on the db: {sqlstate}")
+        
+      ret = self.executeDB(dbExecute)
+      logging.info(f"The result after executeDB is {ret}")
 
 
 
