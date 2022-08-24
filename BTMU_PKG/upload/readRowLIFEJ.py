@@ -380,9 +380,10 @@ class readRowLIFEJ(Common):
       def dbExecute(cursor):
         try:
           for _idx, _line in enumerate(_data):
-            __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['row_detail']}', '{_line['row_type']}', current_timestamp, current_user)"
+            #__query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['row_detail']}', '{_line['row_type']}', current_timestamp, current_user)"
+            __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', ?, '{_line['row_type']}', current_timestamp, current_user)"
             logging.info(__query)
-            cursor.execute(__query)
+            cursor.execute(__query, {_line['row_detail']})
         except pyodbc.Error as ex:
             sqlstate = ex.args[0]
             logging.info(f"Failed on the db: {sqlstate}")
