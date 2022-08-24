@@ -2,13 +2,14 @@ from ..common.common import Common
 import os, logging
 from datetime import datetime
 from datetime import timedelta
+import pyodbc
 #import numpy as np
 
 class readRowLIFEJ(Common):
     def __init__(self, configFile, storageConnectionStr, localDir):
       super().__init__(configFile, storageConnectionStr, localDir)
       print(f"The config file is {self.configFile}")
-
+        
     def execute(self):
         """
         1. Read LIGE/J contents
@@ -60,7 +61,7 @@ class readRowLIFEJ(Common):
           Same Account Delete file
           All0 Delete file
 
-        FUNC01:
+        FUNC01: 
           INPUT: LIFEJ file
           OUTPUT: bank code file
         FUNC02:
@@ -68,7 +69,7 @@ class readRowLIFEJ(Common):
           OUTPUT: SAME ACCOUNT/All0 Account/Summary
         FUNC02:
           INPUT: LEFEJ
-          OUTPUT:
+          OUTPUT: 
         FUNC03:
           INPUT: LIFEJ
           OUTPUT: processdate,bankcode,rowdata,type
@@ -77,7 +78,7 @@ class readRowLIFEJ(Common):
         FUNC04:
           INPUT: LIFEJ
           OUTPUT: New LIFEJ (Filter out the All0 and Same Account and calculate all again)
-        FUNC05
+        FUNC05  
           "MAIL_ALL0": vecAll0Sort,
         FUNC06:
           "MAIL_SAMEACC" : vecSameAccSort
@@ -88,14 +89,14 @@ class readRowLIFEJ(Common):
         vecFileAccounts = []
         mpAll0 = {}
         mpSameAccount = {}
-
+		    
         configData = self.readConfig(self.configFile)
 
         strLIFEJUrl = configData["LOG_LIFEJ_FOLDER"]
         strEncoding = configData["FILE_WATCH_READ_ENCODING"]
         strFileMarkBankcode = configData["FILE_MARK_BANKCODE"]
         strFileMarkWaiting = configData["FILE_MARK_WAITING"]
-
+        
         #strFileMarkBankcode = configData["FILE_MARK_BANKCODE"]
         #strFileMarkWaiting = configData["FILE_MARK_WAITING"]
 			  #vecGLFile = []
@@ -121,7 +122,7 @@ class readRowLIFEJ(Common):
         #test02= self.LeftPadZero(test02, fileFormatConfig['Tail']['TotalAmount'])
         #print(f"The character beore conversion ->{test02}<-")
 
-
+        
         #if 1==1 :
         #  return
 
@@ -131,11 +132,11 @@ class readRowLIFEJ(Common):
         #def _funcHeader(_line):
         #  pass
 
-        #print("Hello new function")
+        #print("Hello new function")    
         #self.makeNewLIFEJFile()
         #self.loopLifeJ(self, strLIFEJUrl, _funcHeader, _funcBody, _funcTail, _funcEnd)
-
-        #return
+        
+        #return 
         #arrModifiedData = []
         vecDeleteRow = []
         vecBankCodeFile = [] # Used to keep the data to output it file
@@ -163,7 +164,7 @@ class readRowLIFEJ(Common):
 
             if strBankCode not in ["J1", "J3", "AC", "AP"]: continue
 
-
+            
             # Parse the AP file
             parsedData = self.parseFile(strFileFormat, f"{strLIFEJUrl}/{fileName}", strEncoding)
             print(f"The parsed data is <{parsedData}>")
@@ -175,7 +176,7 @@ class readRowLIFEJ(Common):
                 strRowType = "1"
                 vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
                 vecBankCodeFile.append(f"{strProcessDate},{_line['Account']},{strBankCode},")
-
+                
                 if strBankCode in configData['CUST_BANK_INFO']:
                   _line['CustCode'] = self.RightPadSpace(configData['CUST_BANK_INFO'][strBankCode]['CustCode'], fileFormatConfig['Header']['CustCode'])
                   _line['CustName'] = self.RightPadSpace(configData['CUST_BANK_INFO'][strBankCode]['CustName'], fileFormatConfig['Header']['CustName'])
@@ -208,7 +209,7 @@ class readRowLIFEJ(Common):
                   lngSumAmount  = lngSumAmount + int(_line['Amount'])
                   lngSumCount += 1
                 vecRtn.append(f",{strProcessDate},{strBankCode},{_header['ProcessDate']},{self.getLineStr(fileFormatConfig, _line)},{strRowType},")
-                # Todo : replace start date
+                # Todo : replace start date 
                 vecTransRow.append({"process_date": strProcessDate, "bank_code": _line['BankCode'], "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']), "row_detail": self.getLineStr(fileFormatConfig, _line), "row_type": strRowType})
 
               if _line['DataType'] == "8":
@@ -220,7 +221,7 @@ class readRowLIFEJ(Common):
                 vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
 
             self.txtFileWrite(vecNewFile, f"{strLIFEJUrl}/{fileName}.new", strEncoding)
-
+        
             if len(vecSameAccount) > 0:
               _fileName = self.GetFileNameWithTS(configData['FILE_SAME_ACCOUNT_NAME_PATTERN'], strBankCode)
               self.txtFileWrite(vecSameAccount, f"{configData['LOG_FOLDER_BACKUP']}/{_fileName}", strEncoding)
@@ -228,7 +229,7 @@ class readRowLIFEJ(Common):
             if len(vecALL0Account) > 0:
               _fileName = self.GetFileNameWithTS(configData['FILE_ALL0_ACCOUNT_NAME_PATTERN'], strBankCode)
               self.txtFileWrite(vecALL0Account, f"{configData['LOG_FOLDER_BACKUP']}/{_fileName}", strEncoding)
-
+        
             vecFileAccounts.append(f"{strBankCode},{strProcessDate},{self.getFiveAccounts(parsedData)}")
 
         self.txtFileWrite(vecFileAccounts, f"{configData['FILE_FIVE_ACCOUNT']}", strEncoding)
@@ -259,11 +260,11 @@ class readRowLIFEJ(Common):
       strFileFormat = configData['FILE_FORMAT']
 
       fileFormatConfig  = self.readConfig(strFileFormat)
-
+      
       vecNewFile = []
       lngSumAmount  = 0
       lngSumCount   = 0
-
+      
       def funcHeader(_fileName, _bankCode, _line, _strLine):
         print(f"Header handling")
         vecNewFile.append(_strLine)
@@ -307,7 +308,7 @@ class readRowLIFEJ(Common):
       strFileFormat = configData['FILE_FORMAT']
 
       fileFormatConfig  = self.readConfig(strFileFormat)
-
+      
       files = self.listShareFile(strLIFEJUrl)
 
       for file in files:
@@ -320,16 +321,16 @@ class readRowLIFEJ(Common):
         if strBankCode not in ["J1", "J3", "AC", "AP"]: continue
 
         print(f"The file to open is {strLIFEJUrl}/{fileName}")
-
+         
         parsedData = self.parseFile(strFileFormat, f"{strLIFEJUrl}/{fileName}", strEncoding)
-
+        
         _header = {}
         print(f"The parsed data is <{parsedData}>")
         for _line in parsedData:
           if _line['DataType'] == "1":
             _header = _line
             _funcHeader(fileName, strBankCode, _line, self.getLineStr(fileFormatConfig, _line))
-
+            
           if _line['DataType'] == "2":
             if _header['BankCode'] == _line['BankCode'] and \
                   _header['BranchCode'] == _line['BranchCode'] and \
@@ -365,7 +366,7 @@ class readRowLIFEJ(Common):
           Sorted array of string
       """
       return dict(sorted(inArr.items(), key=lambda item: f"{item[1][1:2]}{item[1]}")).values()
-
+      
     def fetchLatestRunNum(self):
       def dbExecute(cursor):
         cursor.execute("select 1")
@@ -377,12 +378,19 @@ class readRowLIFEJ(Common):
 
     def insertTransLog(self, _data):
       def dbExecute(cursor):
-        for _idx, _line in enumerate(_data):
-          __query = print(f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['row_detail']}', '{_line['row_type']}', current_timestamp, current_user)")
-          cursor.execute(__query)
-
+        try:
+          for _idx, _line in enumerate(_data):
+            __query = print(f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['row_detail']}', '{_line['row_type']}', current_timestamp, current_user)")
+            logging.info(__query)
+            cursor.execute(__query)
+        except pyodbc.Error as ex:
+            sqlstate = ex.args[0]
+            logging.info(f"Failed on the db: {sqlstate}")
+        
       ret = self.executeDB(dbExecute)
       logging.info(f"The result after executeDB is {ret}")
 
 
 
+
+        
