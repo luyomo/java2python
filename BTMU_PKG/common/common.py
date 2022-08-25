@@ -224,7 +224,7 @@ class Common:
             DELETE_SAME_ACCOUNT_20220801_J1.txt
         """
         strDate = datetime.today().strftime('%Y%m%d')
-        return _pattern.replace("'yyyyMMdd', strDate").replace("BK", strBK)
+        return _pattern.replace("'yyyyMMdd'", strDate).replace("BK", strBK)
 
     def provide_token(self, token_url, app_id, client_secret):
         context = adal.AuthenticationContext(self.__authority_url)
