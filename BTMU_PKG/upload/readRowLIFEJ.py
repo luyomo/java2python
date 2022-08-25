@@ -83,7 +83,7 @@ class readRowLIFEJ(Common):
         FUNC06:
           "MAIL_SAMEACC" : vecSameAccSort
         """
-        mpRtn = {}
+        #mpRtn = {}
         vecRtn = []
         vecTransRow = []
         vecTransLog = []
@@ -98,86 +98,64 @@ class readRowLIFEJ(Common):
         strFileMarkBankcode = configData["FILE_MARK_BANKCODE"]
         strFileMarkWaiting = configData["FILE_MARK_WAITING"]
         
-        #strFileMarkBankcode = configData["FILE_MARK_BANKCODE"]
-        #strFileMarkWaiting = configData["FILE_MARK_WAITING"]
-			  #vecGLFile = []
-        #vecRtnInfo = []
-
-        #strGLPaymentUrl = configData['GL_PAYMENT_FOLDER']
-        #strEncoding = configData['GL_PAYMENT_ENCODING']
-        #strFileTo = configData['GL_PAYMENT_COPYTO']
-        #strFileModified = configData['GL_PAYMENT_MODIFIED']
+        # This is the file format from GL
         strFileFormat = configData['FILE_FORMAT']
-
         fileFormatConfig  = self.readConfig(strFileFormat)
-        #print(f"The file config is <{fileFormatConfig}>")
-        #print(f"The config data is {configData}")
-
-        #test="1111"
-        #print(f"The character beore conversion ->{test}<-")
-        #test= self.RightPadSpace(test, fileFormatConfig['Header']['CustCode'])
-        #print(f"The character beore conversion ->{test}<-")
-
-        #test02=1111
-        #print(f"The character beore conversion ->{test02}<-")
-        #test02= self.LeftPadZero(test02, fileFormatConfig['Tail']['TotalAmount'])
-        #print(f"The character beore conversion ->{test02}<-")
-
         
-        #if 1==1 :
-        #  return
-
+        # Get the current date as the process date
         strProcessDate = datetime.today().strftime('%Y%m%d')
-        print(f"current date is {strProcessDate}")
-
-        #def _funcHeader(_line):
-        #  pass
-
-        #print("Hello new function")    
-        #self.makeNewLIFEJFile()
-        #self.loopLifeJ(self, strLIFEJUrl, _funcHeader, _funcBody, _funcTail, _funcEnd)
+        logging.debug(f"Current date(process date) : {strProcessDate}")
         
-        #return 
-        #arrModifiedData = []
         vecDeleteRow = []
         vecBankCodeFile = [] # Used to keep the data to output it file
 
         files = self.listShareFile(strLIFEJUrl)
         # ---------- Loop all the files from the AP directory
         for file in files:
-            vecNewFile = []
-            vecSameAccount = []
-            vecALL0Account = []
+            vecNewFile = []         # Keep the data for new file(Remove the ALL0 and SameAccount and re-sum the data)
+            vecSameAccount = []     # Keep the same account data to output to file
+            vecALL0Account = []     # Keep the all0 data to putput to file
 
-            fileName = file['name']
+            fileName = file['name'] # File name
 
-            strProcessDate = datetime.today().strftime('%Y%m%d')
-            print(f"current date is {strProcessDate}")
+            # To remove since it has been got from the main branch
+            #strProcessDate = datetime.today().strftime('%Y%m%d')
+            #print(f"current date is {strProcessDate}")
             #vecBankCodeFile
 
-            lngSumAmount  = 0
-            lngSumCount   = 0
+            lngSumAmount  = 0       # New sum account for new file(Remove All0 and Same account data)
+            lngSumCount   = 0       # Same to lngSumAmount
             #lngFileSumAmount  = 0
             #lngFileSumCount   = 0
 
-            strBankCode = fileName[0:2]
+            strBankCode = fileName[0:2]      # Get the bank code: J1/J3/AC/Ap
             print(f"The bank code is {strBankCode}")
 
+            # Skip if the bank code is not in the list
             if strBankCode not in ["J1", "J3", "AC", "AP"]: continue
 
-            
+            # Todo: Skip if the file is directory.
+
+
             # Parse the AP file
             parsedData = self.parseFile(strFileFormat, f"{strLIFEJUrl}/{fileName}", strEncoding)
-            print(f"The parsed data is <{parsedData}>")
-            _header = {}
-            _tail = {}
+            logging.debug(f"Parsed data: <{parsedData}>")
+
+            _header = {}         # Keep the header to get the meta data and same account judgement
+            #_tail = {}
             for _line in parsedData:
-              strRowType = ""
+              strRowType = ""                 # New data type
               if _line['DataType'] == "1":
                 strRowType = "1"
+
+                # Keep the data for new file.
                 vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
+
+                # Keep the data for five file mark
                 vecBankCodeFile.append(f"{strProcessDate},{_line['Account']},{strBankCode},")
                 
+                # Replace the cust code/cust name/bank code/bank name in the header from the config file.
+                # This information will be outputed to DB(Not output this replacement to new file)
                 if strBankCode in configData['CUST_BANK_INFO']:
                   _line['CustCode'] = self.RightPadSpace(configData['CUST_BANK_INFO'][strBankCode]['CustCode'], fileFormatConfig['Header']['CustCode'])
                   _line['CustName'] = self.RightPadSpace(configData['CUST_BANK_INFO'][strBankCode]['CustName'], fileFormatConfig['Header']['CustName'])
@@ -188,6 +166,9 @@ class readRowLIFEJ(Common):
               if _line['DataType'] == "2":
 
                 # If the transfer account code is same to destination
+                # 1. Output the data into file
+                # 2. Output the data to trans_log to show the invalid data
+                # 3. Remove it from the new file.
                 if _header['BankCode'] == _line['BankCode'] and \
                   _header['BranchCode'] == _line['BranchCode'] and \
                   _header['Account'] == _line['Account']:
@@ -198,7 +179,10 @@ class readRowLIFEJ(Common):
                   vecDeleteRow.append(f",{strProcessDate},,{strBankCode},{_header['ProcessDate']},SAME ACCOUNT,1,{_line['Amount']},{self.getLineStr(fileFormatConfig, _line)},")
                   vecTransLog.append({"process_date": strProcessDate, "bank_code": strBankCode, "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']), "record_type": "SAME ACCOUNT", "row_count": 1, "row_amount": _line['Amount'], "row_detail": self.getLineStr(fileFormatConfig, _line)})
                 # If the accout is 0000000
-                elif _header['Account'] == "0000000":
+                elif _line['Account'] == "0000000":
+                  # 1. Output the data into file
+                  # 2. Output the data to trans_log to show the invalid data
+                  # 3. Remove it from the new file.
                   strRowType = "ALL0"
                   vecALL0Account.append(self.getLineStr(fileFormatConfig, _line))
                   mpAll0[fileName] = fileName
@@ -209,51 +193,70 @@ class readRowLIFEJ(Common):
                 else:
                   strRowType = "2"
                   vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
+
+                  # Calculate the new sum and count for the new file
                   lngSumAmount  = lngSumAmount + int(_line['Amount'])
                   lngSumCount += 1
+
+                # Keep the data to output the data to file
                 vecRtn.append(f",{strProcessDate},{strBankCode},{_header['ProcessDate']},{self.getLineStr(fileFormatConfig, _line)},{strRowType},")
-                # Todo : replace start date 
+                # Todo : replace start date
+                # Keep the data to insert it into dxc.trans_row 
                 vecTransRow.append({"process_date": strProcessDate, "bank_code": _line['BankCode'], "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']), "row_detail": self.getLineStr(fileFormatConfig, _line), "row_type": strRowType})
 
               if _line['DataType'] == "8":
+                # Prepare the new tail record with new amount and count
                 _line['TotalAcount'] = self.LeftPadZero(lngSumCount, fileFormatConfig['Tail']['TotalAcount'])
                 _line['TotalAmount'] = self.LeftPadZero(lngSumAmount, fileFormatConfig['Tail']['TotalAmount'])
                 vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
 
               if _line['DataType'] == "9":
+                # Nothing but output the data to new file.
                 vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
 
-            self.txtFileWrite(vecNewFile, f"{strLIFEJUrl}/{fileName}.new", strEncoding)
+            # If there is same account and all0 account, overwrite the file. 
+            # Otherwise skip it.
+            if len(vecDeleteRow) > 0:
+              self.txtFileWrite(vecNewFile, f"{strLIFEJUrl}/{fileName}.new", strEncoding)
         
+            # Output the same account data to file if exists
             if len(vecSameAccount) > 0:
               _fileName = self.GetFileNameWithTS(configData['FILE_SAME_ACCOUNT_NAME_PATTERN'], strBankCode)
               self.txtFileWrite(vecSameAccount, f"{configData['LOG_FOLDER_BACKUP']}/{_fileName}", strEncoding)
 
+            # Output ALL0 account data to file if exists
             if len(vecALL0Account) > 0:
               _fileName = self.GetFileNameWithTS(configData['FILE_ALL0_ACCOUNT_NAME_PATTERN'], strBankCode)
               self.txtFileWrite(vecALL0Account, f"{configData['LOG_FOLDER_BACKUP']}/{_fileName}", strEncoding)
         
+            # Prepare the data for FILE_FIVE_MARKFILE
             vecFileAccounts.append(f"{strBankCode},{strProcessDate},{self.getFiveAccounts(parsedData)}")
 
+        # Output the FILE_FIVE_ACCOUNT
         self.txtFileWrite(vecFileAccounts, f"{configData['FILE_FIVE_ACCOUNT']}", strEncoding)
 
+        # The data for mail
         vecAll0Sort = self.sortFile(mpAll0)
 
+        # The data for mail
         vecSameAccSort = self.sortFile(mpSameAccount)
 
         self.txtFileWrite(vecBankCodeFile, strFileMarkBankcode, strEncoding)
 
         self.txtFileWrite([str(len(vecBankCodeFile))], strFileMarkWaiting, strEncoding)
 
-        self.insertTransRow(vecTransRow)
+        # Insert the data into trans_row
+        #self.insertTransRow(vecTransRow)
 
-        self.insertTransLog(vecTransLog)
+        # Insert the data into trans_log
+        #self.insertTransLog(vecTransLog)
 
         return {
-          "DBROW" : vecRtn,
-          "MAIL_ALL0": vecAll0Sort,
-          "MAIL_SAMEACC" : vecSameAccSort,
-          "DELETED_ROW" : vecDeleteRow
+        #  "DBROW" : vecRtn,
+          "MAIL_ALL0": list(vecAll0Sort),
+          "MAIL_SAMEACC" : list(vecSameAccSort)
+        #,
+        # "DELETED_ROW" : vecDeleteRow
         }
 
         return vecRtn

@@ -4,7 +4,7 @@ import azure.functions as func
 from azure.storage.fileshare import ShareServiceClient
 from azure.storage.fileshare import ShareDirectoryClient
 import pyodbc
-import os, json
+import os, json, sys
 
 from BTMU_PKG.upload.readRowLIFEJ import readRowLIFEJ
 
@@ -89,10 +89,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     #insLogLIFEJ.FetchDBConn()
     
 
-    insLogLIFEJ.execute()
+    retData = insLogLIFEJ.execute()
+    retData["Status"] = "Success"
 
     return func.HttpResponse(
-            json.dumps({"Status": "Success"}),
+            json.dumps(retData),
             status_code=200,
             mimetype="application/json"
         )
