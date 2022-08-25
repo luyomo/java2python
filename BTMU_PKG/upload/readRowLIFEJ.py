@@ -246,10 +246,10 @@ class readRowLIFEJ(Common):
         self.txtFileWrite([str(len(vecBankCodeFile))], strFileMarkWaiting, strEncoding)
 
         # Insert the data into trans_row
-        #self.insertTransRow(vecTransRow)
+        self.insertTransRow(vecTransRow)
 
         # Insert the data into trans_log
-        #self.insertTransLog(vecTransLog)
+        self.insertTransLog(vecTransLog)
 
         return {
         #  "DBROW" : vecRtn,
