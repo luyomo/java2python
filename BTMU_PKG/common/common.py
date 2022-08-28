@@ -30,6 +30,14 @@ class Common:
 
         return localFileName
 
+    def getLastModifiedTimestamp(self, fileName):
+        retFileName = self.parseFileName(fileName)
+        print(f"Original file is {fileName}, share file: {retFileName['shareFile']}, file name: {retFileName['fileName']}")
+
+        file_client = ShareFileClient.from_connection_string(conn_str=self.connectionStr, share_name=retFileName['shareFile'], file_path=retFileName['fileName'])
+        retAttr = file_client.get_file_properties()  
+        return retAttr['last_modified'].strftime('%Y/%m/%d %H:%M:%S')
+        
     def listShareFile(self, folder):
         retFileName = self.parseFileName(folder)
         print(f"Original file is {folder}, share file: {retFileName['shareFile']}, file name: {retFileName['fileName']}")
