@@ -83,11 +83,11 @@ class readRowLIFEJ(Common):
         FUNC06:
           "MAIL_SAMEACC" : vecSameAccSort
         """
-        #mpRtn = {}
         vecRtn = []
         vecTransRow = []
         vecTransLog = []
         vecFileAccounts = []
+        arrNewFiles = []
         mpAll0 = {}
         mpSameAccount = {}
 		    
@@ -125,9 +125,7 @@ class readRowLIFEJ(Common):
 
             lngSumAmount  = 0       # New sum account for new file(Remove All0 and Same account data)
             lngSumCount   = 0       # Same to lngSumAmount
-            #lngFileSumAmount  = 0
-            #lngFileSumCount   = 0
-
+            
             strBankCode = fileName[0:2]      # Get the bank code: J1/J3/AC/Ap
             print(f"The bank code is {strBankCode}")
 
@@ -217,7 +215,11 @@ class readRowLIFEJ(Common):
             # If there is same account and all0 account, overwrite the file. 
             # Otherwise skip it.
             if len(vecDeleteRow) > 0:
-              self.txtFileWrite(vecNewFile, f"{strLIFEJUrl}/{fileName}.new", strEncoding)
+              self.txtFileWrite(vecNewFile, f"{strLIFEJUrl}/{fileName}", strEncoding)
+              retTimestamp =self.getLastModifiedTimestamp(f"{strLIFEJUrl}/{fileName}")
+              arrNewFiles.append({"FileName": f"{strLIFEJUrl}/{fileName}", "LastModifiedDate": retTimestamp})
+            else:
+              arrNewFiles.append({"FileName": f"{strLIFEJUrl}/{fileName}"})
         
             # Output the same account data to file if exists
             if len(vecSameAccount) > 0:
@@ -254,7 +256,8 @@ class readRowLIFEJ(Common):
         return {
         #  "DBROW" : vecRtn,
           "MAIL_ALL0": list(vecAll0Sort),
-          "MAIL_SAMEACC" : list(vecSameAccSort)
+          "MAIL_SAMEACC" : list(vecSameAccSort),
+          "Files": arrNewFiles
         #,
         # "DELETED_ROW" : vecDeleteRow
         }
