@@ -83,7 +83,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"Local dir is {__local_dir}")
 
     insLogLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir)
-    insLogLIFEJ.setDBConfig("jaytestdbserver.database.windows.net", "jaytestdb", app_id, client_secret, "")
+    insLogLIFEJ.setDBConfig(sqlserver_url, dbname, app_id, client_secret, "")
+    #insLogLIFEJ.setDBConfig("jaytestdbserver.database.windows.net", "jaytestdb", app_id, client_secret, "")
     #insLogLIFEJ = readRowLIFEJ("fas-etl")
     #insLogLIFEJ.fetchLatestRunNum()
     #insLogLIFEJ.FetchDBConn()

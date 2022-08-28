@@ -1,8 +1,4 @@
 import logging
-#import adal
-#import azure.functions as func
-#from azure.storage.fileshare import ShareServiceClient
-#from azure.storage.fileshare import ShareDirectoryClient
 from azure.storage.fileshare import ShareFileClient
 from azure.storage.fileshare import ShareDirectoryClient
 import json
@@ -18,6 +14,9 @@ class Common:
         self.connectionStr = storageConnectionStr
         self.configFile = configFile
         self.localDir = localDir
+        self.configData = self.readConfig(configFile)
+        if self.configData['SQLSERVER_URL'] != None: self.__sqlserver_url = self.configData['SQLSERVER_URL']
+        if self.configData['DBName'] != None: self.__dbname = self.configData['DBName']
 
     def readShareFile(self, fileName):
         retFileName = self.parseFileName(fileName)
@@ -236,8 +235,8 @@ class Common:
         return token
 
     def setDBConfig(self, sqlserverUrl, dbName, appId, clientSecret, authorityUrl):
-        self.__sqlserver_url = sqlserverUrl
-        self.__dbname = dbName 
+        if sqlserverUrl != None: self.__sqlserver_url = sqlserverUrl
+        if dbName != None: self.__dbname = dbName
         self.__app_id = appId
         self.__client_secret = clientSecret
         self.__authority_url = authorityUrl
