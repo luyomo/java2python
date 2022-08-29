@@ -88,6 +88,7 @@ class readRowLIFEJ(Common):
         vecTransLog = []
         vecFileAccounts = []
         arrNewFiles = []
+        arrDeleted = []
         mpAll0 = {}
         mpSameAccount = {}
 		    
@@ -216,20 +217,22 @@ class readRowLIFEJ(Common):
             # Otherwise skip it.
             if len(vecDeleteRow) > 0:
               self.txtFileWrite(vecNewFile, f"{strLIFEJUrl}/{fileName}", strEncoding)
-              retTimestamp =self.getLastModifiedTimestamp(f"{strLIFEJUrl}/{fileName}")
-              arrNewFiles.append({"FileName": f"{strLIFEJUrl}/{fileName}", "LastModifiedDate": retTimestamp})
-            else:
-              arrNewFiles.append({"FileName": f"{strLIFEJUrl}/{fileName}"})
-        
+            
+            retTimestamp =self.getLastModifiedTimestamp(f"{strLIFEJUrl}/{fileName}")
+            #arrNewFiles.append({"FileName": f"{strLIFEJUrl}/{fileName}", "LastModifiedDate": retTimestamp})
+            arrNewFiles.append(f"{strBankCode}<{fileName}>Last modified date-time:{retTimestamp}")
+            
             # Output the same account data to file if exists
             if len(vecSameAccount) > 0:
               _fileName = self.GetFileNameWithTS(configData['FILE_SAME_ACCOUNT_NAME_PATTERN'], strBankCode)
               self.txtFileWrite(vecSameAccount, f"{configData['LOG_FOLDER_BACKUP']}/{_fileName}", strEncoding)
+              arrDeleted.append(f"{_fileName}(All 0 Bank Accounts found and deleted, Total amount was summarized again.)")
 
             # Output ALL0 account data to file if exists
             if len(vecALL0Account) > 0:
               _fileName = self.GetFileNameWithTS(configData['FILE_ALL0_ACCOUNT_NAME_PATTERN'], strBankCode)
               self.txtFileWrite(vecALL0Account, f"{configData['LOG_FOLDER_BACKUP']}/{_fileName}", strEncoding)
+              arrDeleted.append(f"{_fileName}(Same Bank Accounts found and deleted, Total amount was summarized again.")
         
             # Prepare the data for FILE_FIVE_MARKFILE
             vecFileAccounts.append(f"{strBankCode},{strProcessDate},{self.getFiveAccounts(parsedData)}")
@@ -254,12 +257,10 @@ class readRowLIFEJ(Common):
         self.insertTransLog(vecTransLog)
 
         return {
-        #  "DBROW" : vecRtn,
-          "MAIL_ALL0": list(vecAll0Sort),
-          "MAIL_SAMEACC" : list(vecSameAccSort),
-          "Files": arrNewFiles
-        #,
-        # "DELETED_ROW" : vecDeleteRow
+          "Email": {
+            "LastModification": arrNewFiles,
+            "InvalidSummary": arrDeleted
+          }
         }
 
         return vecRtn
