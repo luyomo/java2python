@@ -6,9 +6,11 @@ import pyodbc
 #import numpy as np
 
 class readRowLIFEJ(Common):
-    def __init__(self, configFile, storageConnectionStr, localDir):
-      super().__init__(configFile, storageConnectionStr, localDir)
+    def __init__(self, configFile, storageConnectionStr, localDir, callerName):
+      #super().__init__(configFile, storageConnectionStr, localDir)
+      Common.__init__(self, configFile, storageConnectionStr, localDir)
       print(f"The config file is {self.configFile}")
+      self.__callerName = callerName
         
     def execute(self):
         """

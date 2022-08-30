@@ -242,13 +242,12 @@ class Common:
 
         return token
 
-    def setDBConfig(self, sqlserverUrl, dbName, appId, clientSecret, authorityUrl, callName):
+    def setDBConfig(self, sqlserverUrl, dbName, appId, clientSecret, authorityUrl):
         if sqlserverUrl != None: self.__sqlserver_url = sqlserverUrl
         if dbName != None: self.__dbname = dbName
         self.__app_id = appId
         self.__client_secret = clientSecret
         self.__authority_url = authorityUrl
-        self.__callerName = callName
 
     def findYYYYMMDD(self, strPayDateFrom, strDays, strMMDD):
         """

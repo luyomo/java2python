@@ -90,8 +90,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if __local_dir == None: __local_dir = "/tmp"
     logging.info(f"Local dir is {__local_dir}")
 
-    insLogLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir)
-    insLogLIFEJ.setDBConfig(sqlserver_url, dbname, app_id, client_secret, "", callerName)
+    insLogLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir, callerName)
+    insLogLIFEJ.setDBConfig(sqlserver_url, dbname, app_id, client_secret, "")
     
     retData = insLogLIFEJ.execute()
     retData["Status"] = "Success"
