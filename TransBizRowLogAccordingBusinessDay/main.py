@@ -1,5 +1,4 @@
 import logging
-#import adal
 import azure.functions as func
 from azure.storage.fileshare import ShareServiceClient
 from azure.storage.fileshare import ShareDirectoryClient
@@ -68,9 +67,18 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         else:
             schema = req_body.get('Schema')
 
+    callerName = req.params.get('CallerName')
+    if not schema:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            return func.HttpResponse("Caller name is an error.", status_code=400)
+        else:
+            callerName = req_body.get('CallerName')
+
+
     __connection_string = os.getenv("AzureWebJobsStorage")
 
-    #__share_name = os.getenv("AzureFASShareName")
     # This is used for the testing. The test dir will be used variable because
     # in the windows, we have to define one while in the unix prod, the /tmp is used
     # to keep the temporary file.
@@ -83,13 +91,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info(f"Local dir is {__local_dir}")
 
     insLogLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir)
-    insLogLIFEJ.setDBConfig(sqlserver_url, dbname, app_id, client_secret, "")
-    #insLogLIFEJ.setDBConfig("jaytestdbserver.database.windows.net", "jaytestdb", app_id, client_secret, "")
-    #insLogLIFEJ = readRowLIFEJ("fas-etl")
-    #insLogLIFEJ.fetchLatestRunNum()
-    #insLogLIFEJ.FetchDBConn()
+    insLogLIFEJ.setDBConfig(sqlserver_url, dbname, app_id, client_secret, "", callerName)
     
-
     retData = insLogLIFEJ.execute()
     retData["Status"] = "Success"
 

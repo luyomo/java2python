@@ -392,7 +392,11 @@ class readRowLIFEJ(Common):
       def dbExecute(cursor):
         try:
           for _idx, _line in enumerate(_data):
-            __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', '{_line['row_type']}', current_timestamp, current_user)"
+            __query = ""
+            if self.__callerName == None:
+              __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', '{_line['row_type']}', current_timestamp, current_user)"
+            else:
+              __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', '{_line['row_type']}', current_timestamp, {self.__callerName})"
             logging.info(f"the query is {__query}")
             cursor.execute(__query)
         except pyodbc.Error as ex:
@@ -406,7 +410,11 @@ class readRowLIFEJ(Common):
       def dbExecute(cursor):
         try:
           for _idx, _line in enumerate(_data):
-            __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, current_user)"
+            __query = ""
+            if self.__callerName == None:
+              __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, current_user)"
+            else:
+              __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, {self.__callerName})"
             logging.info(f"the query is {__query}")
             cursor.execute(__query)
         except pyodbc.Error as ex:
