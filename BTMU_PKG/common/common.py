@@ -4,10 +4,13 @@ from azure.storage.fileshare import ShareDirectoryClient
 import json
 import time
 import pyodbc
-import os, adal, struct
+import os
+import adal
+import struct
 from datetime import datetime
 from datetime import timedelta
 import numpy as np
+
 
 class Common:
     def __init__(self, configFile, storageConnectionStr, localDir) -> None:
@@ -15,8 +18,10 @@ class Common:
         self.configFile = configFile
         self.localDir = localDir
         self.configData = self.readConfig(configFile)
-        if self.configData['SQLSERVER_URL'] != None: self.__sqlserver_url = self.configData['SQLSERVER_URL']
-        if self.configData['DBName'] != None: self.__dbname = self.configData['DBName']
+        if self.configData['SQLSERVER_URL'] is not None:
+            self.__sqlserver_url = self.configData['SQLSERVER_URL']
+        if self.configData['DBName'] is not None:
+            self.__dbname = self.configData['DBName']
 
     def readShareFile(self, fileName):
         retFileName = self.parseFileName(fileName)
@@ -37,12 +42,12 @@ class Common:
         file_client = ShareFileClient.from_connection_string(conn_str=self.connectionStr, share_name=retFileName['shareFile'], file_path=retFileName['fileName'])
         retAttr = file_client.get_file_properties()  
         return retAttr['last_modified'].strftime('%Y/%m/%d %H:%M:%S')
-        
+       
     def listShareFile(self, folder):
         retFileName = self.parseFileName(folder)
         print(f"Original file is {folder}, share file: {retFileName['shareFile']}, file name: {retFileName['fileName']}")
 
-        service = ShareDirectoryClient.from_connection_string(conn_str=self.connectionStr, share_name=retFileName['shareFile'],directory_path=retFileName['fileName'])
+        service = ShareDirectoryClient.from_connection_string(conn_str=self.connectionStr, share_name=retFileName['shareFile'], directory_path=retFileName['fileName'])
         fileList = list(service.list_directories_and_files())
         return fileList
 
@@ -59,13 +64,16 @@ class Common:
             data = file_client.download_file()
             data.readinto(file_handle)
 
-        file_dest_client = ShareFileClient.from_connection_string(conn_str=self.connectionStr, share_name=destRetFileName['shareFile'], file_path=destRetFileName['fileName'])
+        file_dest_client = ShareFileClient.from_connection_string(
+            conn_str=self.connectionStr, 
+            share_name=destRetFileName['shareFile'],
+            file_path=destRetFileName['fileName'])
         with open(localFileName, "rb") as source_file:
             file_dest_client.upload_file(source_file)
 
     def getLineStr(self, configData, line):
         retStr = ""
-        _configData={}
+        _configData = {}
         if line['DataType'] == "1":
             _configData = configData['Header']
         if line['DataType'] == "2":
@@ -74,9 +82,10 @@ class Common:
             _configData = configData['Tail']
         if line['DataType'] == "9":
             _configData = configData['End']
-        
-        for key in _configData: retStr += line[key]
-        
+
+        for key in _configData:
+            retStr += line[key]
+
         return retStr
 
     def uploadData(self, configFile, data, dataFile, encoding):
@@ -85,13 +94,12 @@ class Common:
         retFileName = self.parseFileName(dataFile)
         print(f"Original file is {dataFile}, share file: {retFileName['shareFile']}, file name: {retFileName['fileName']}")
 
-
         configData = self.readConfig(configFile)
         localFileName = f"{self.localDir}/{int(time.time())}"
 
         newFile = open(localFileName, "w")
         for _row in data:
-            _configData={}
+            _configData = {}
             if _row['DataType'] == "1":
                 _configData = configData['Header']
             if _row['DataType'] == "2":
@@ -101,21 +109,20 @@ class Common:
             if _row['DataType'] == "9":
                 _configData = configData['End']
             
-            for key in _configData: newFile.write(_row[key])
+            for key in _configData:
+                newFile.write(_row[key])
             newFile.write("\n")
-        #newFile.write("9\n")
+        # newFile.write("9\n")
         newFile.close()
 
         file_dest_client = ShareFileClient.from_connection_string(conn_str=self.connectionStr, share_name=retFileName['shareFile'], file_path=retFileName['fileName'])
         with open(localFileName, "rb") as source_file:
             file_dest_client.upload_file(source_file)
 
-
     def txtFileWrite(self, data, dataFile, encoding):
         print(f"txtFileWrite : data: {data}, dataFile:{dataFile}, encoding: {encoding}")
         retFileName = self.parseFileName(dataFile)
         print(f"Original file is {dataFile}, share file: {retFileName['shareFile']}, file name: {retFileName['fileName']}")
-
 
         localFileName = f"{self.localDir}/{int(time.time())}"
 
@@ -146,16 +153,16 @@ class Common:
     def parseFile(self, configFile, dataFile, encoding):
         arrayData = []
         configData = self.readConfig(configFile)
-        #self.__logger.debug(f"Header config : {configData['Header']}")
-        #self.__logger.debug(f"Body config   : {configData['Body']}")
-        #self.__logger.debug(f"Tail config   : {configData['Tail']}")
+        # self.__logger.debug(f"Header config : {configData['Header']}")
+        # self.__logger.debug(f"Body config   : {configData['Body']}")
+        # self.__logger.debug(f"Tail config   : {configData['Tail']}")
         downloadFile = self.readShareFile(dataFile)
         f = open(downloadFile, "r", encoding=encoding)
         try:
             for line in f:
-                #self.__logger.debug(f"Line: {line}")
+                # self.__logger.debug(f"Line: {line}")
                 dataType = line[0:1]
-                #self.__logger.debug(f"Data Type: {dataType}")
+                # self.__logger.debug(f"Data Type: {dataType}")
                 if dataType == "1":
                     retData = self.parseLine(line, configData['Header'], encoding)
                 elif dataType == "2":
@@ -174,27 +181,27 @@ class Common:
         bytesStr = inStr.replace("\n", "").encode(encoding)
         retMap = {}
         for key in config:
-            #print(f"The config is <{key}> and {config[key]} ")
+            # print(f"The config is <{key}> and {config[key]} ")
             # Todo: Return error if the format is not [number-number]
             pos = config[key].split("-")
-            #print(f"The start is {pos[0]} and end is {pos[1]}")
+            # print(f"The start is {pos[0]} and end is {pos[1]}")
             # Todo: Return error if it's not the number
             tmpBytes = bytesStr[int(pos[0])-1:int(pos[1])]
             retMap[key] = tmpBytes.decode(encoding)
-            #retMap[key] = inStr[int(pos[0])-1:int(pos[1])]
-        #print(f"This is the input mesage <{inStr}> ")
-        #print(f"The map value is <{retMap}>")
+            # retMap[key] = inStr[int(pos[0])-1:int(pos[1])]
+        # print(f"This is the input mesage <{inStr}> ")
+        # print(f"The map value is <{retMap}>")
         return retMap
 
     def HenkanZenkaku(self, inStr, encoding):
         _toReplace = ""
         for _char in inStr:
-            #print(f"The character is {_char}")
+            # print(f"The character is {_char}")
             if len(_char.encode(encoding)) > 1:
                 _toReplace = _toReplace + "\\" * len(_char.encode(encoding))
             else:
                 _toReplace = _toReplace + _char
-        #print(f"The body is ->|{_toReplace}|<-")
+        # print(f"The body is ->|{_toReplace}|<-")
         return _toReplace
 
     def RightPadSpace(self, inStr, colLen):
@@ -243,8 +250,10 @@ class Common:
         return token
 
     def setDBConfig(self, sqlserverUrl, dbName, appId, clientSecret, authorityUrl):
-        if sqlserverUrl != None: self.__sqlserver_url = sqlserverUrl
-        if dbName != None: self.__dbname = dbName
+        if sqlserverUrl is not None:
+            self.__sqlserver_url = sqlserverUrl
+        if dbName is not None:
+            self.__dbname = dbName
         self.__app_id = appId
         self.__client_secret = clientSecret
         self.__authority_url = authorityUrl
@@ -290,7 +299,7 @@ class Common:
             ret = funcDBProc(cursor)
             logging.info(f"The result is {ret}")
         # cursor.execute(f'TRUNCATE TABLE {schema}.Employee_AAD')
-        #for index, row in src_df.iterrows():
+        # for index, row in src_df.iterrows():
         #    cursor.execute(f"Exec {schema}.usp_Employee_Insert_Update ?,?,?,?,?,?", row.EmployeeId, row.JPUserId,
         #                   row.InsimUserId, row.Department, row.BusinessPhone, row.Mail)
             conn.commit()
@@ -301,40 +310,39 @@ class Common:
         return ret
 
     def FetchDBConn(self):
-        #db_token = self.provide_token('https://database.windows.net', self.__app_id, self.__client_secret)
+        # db_token = self.provide_token('https://database.windows.net', self.__app_id, self.__client_secret)
         try:
             driver = "{ODBC Driver 17 for SQL Server}"
-            #sqlserver_url = "sqlsr-fas-dev-001.database.windows.net"
+            # sqlserver_url = "sqlsr-fas-dev-001.database.windows.net"
             sqlserver_url = "jaytestdbserver.database.windows.net"
-            #dbname = "sqldb-fas-dev"
+            # dbname = "sqldb-fas-dev"
             dbname = "jaytestdb"
             connection_string = 'DRIVER='+driver+';SERVER='+sqlserver_url+';DATABASE='+dbname
             if os.getenv("MSI_SECRET"):
                 logging.info(f'Connection: MSI_SECRET')
                 logging.info(f"The MSI_SECRET is {os.getenv('MSI_SECRET')}")
-            
+
                 conn = pyodbc.connect(connection_string+';Authentication=ActiveDirectoryMsi')
-            
+
             else:
                 logging.info(f"No MSI_SECRET")
                 return
-            #SQL_COPT_SS_ACCESS_TOKEN = 1256
+            # SQL_COPT_SS_ACCESS_TOKEN = 1256
 
-            #exptoken = b''
-            #for i in bytes(db_token['accessToken'], "UTF-8"):
+            # exptoken = b''
+            # for i in bytes(db_token['accessToken'], "UTF-8"):
             #    exptoken += bytes({i})
             #    exptoken += bytes(1)
 
-            #tokenstruct = struct.pack("=i", len(exptoken)) + exptoken
-            #conn = pyodbc.connect(connection_string, attrs_before={SQL_COPT_SS_ACCESS_TOKEN: tokenstruct})
-            #logging.info(f'Connection: Token')
+            # tokenstruct = struct.pack("=i", len(exptoken)) + exptoken
+            # conn = pyodbc.connect(connection_string, attrs_before={SQL_COPT_SS_ACCESS_TOKEN: tokenstruct})
+            # logging.info(f'Connection: Token')
             cursor = conn.cursor()
             # cursor.execute(f'TRUNCATE TABLE {schema}.Employee_AAD')
-            for index, row in src_df.iterrows():
-                cursor.execute(f"Exec select max(run_num) from dxc.transbiz_his")
+            # for index, row in src_df.iterrows():
+            #    cursor.execute(f"Exec select max(run_num) from dxc.transbiz_his")
             conn.commit()
             cursor.close()
         except pyodbc.Error as ex:
-                sqlstate = ex.args[0]
-                logging.info(f"The error is {ex}")
-
+            # sqlstate = ex.args[0]
+            logging.info(f"The error is {ex}")

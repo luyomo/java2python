@@ -3,19 +3,24 @@ import azure.functions as func
 from azure.storage.fileshare import ShareServiceClient
 from azure.storage.fileshare import ShareDirectoryClient
 import pyodbc
-import os, json, sys
-
+import os
+import json
+import sys
 from BTMU_PKG.upload.readRowLIFEJ import readRowLIFEJ
 
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+    logging.info('Python HTTP trigger function processed a TransBizRowLogAccordingBusinessDay request.')
 
     configFile = req.params.get('ConfigFile')
     if not configFile:
         try:
             req_body = req.get_json()
         except ValueError:
-            pass
+            return func.HttpResponse(
+                json.dumps({"Status": "Failure", "ErrorMessage": "ConfigFile value is an error."}),
+                status_code=400,
+                mimetype="application/json")
         else:
             configFile = req_body.get('ConfigFile')
 
@@ -27,7 +32,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             req_body = req.get_json()
         except ValueError:
-            return func.HttpResponse("AppId value is an error.", status_code=400)
+            return func.HttpResponse(
+                json.dumps({"Status": "Failure", "ErrorMessage": "AppId value is an error."}),
+                status_code=400,
+                mimetype="application/json")
         else:
             app_id = req_body.get('AppId')
 
@@ -36,7 +44,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             req_body = req.get_json()
         except ValueError:
-            return func.HttpResponse("ClientSecret value is an error.", status_code=400)
+            return func.HttpResponse(
+                json.dumps({"Status": "Failure", "ErrorMessage": "ClientSecret value is an error."}),
+                status_code=400,
+                mimetype="application/json")
         else:
             client_secret = req_body.get('ClientSecret')
 
@@ -45,7 +56,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             req_body = req.get_json()
         except ValueError:
-            return func.HttpResponse("SQLServerUrl value is an error.", status_code=400)
+            return func.HttpResponse(
+                json.dumps({"Status": "Failure", "ErrorMessage": "SQLServerUrl value is an error."}),
+                status_code=400,
+                mimetype="application/json")
         else:
             sqlserver_url = req_body.get('SQLServerUrl')
 
@@ -54,7 +68,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             req_body = req.get_json()
         except ValueError:
-            return func.HttpResponse("DBName value is an error.", status_code=400)
+            return func.HttpResponse(
+                json.dumps({"Status": "Failure", "ErrorMessage": "DBName value is an error."}),
+                status_code=400,
+                mimetype="application/json")
         else:
             dbname = req_body.get('DBName')
 
@@ -63,7 +80,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             req_body = req.get_json()
         except ValueError:
-            return func.HttpResponse("Schema value is an error.", status_code=400)
+            return func.HttpResponse(
+                json.dumps({"Status": "Failure", "ErrorMessage": "Schema value is an error."}),
+                status_code=400,
+                mimetype="application/json")
         else:
             schema = req_body.get('Schema')
 
@@ -72,33 +92,35 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             req_body = req.get_json()
         except ValueError:
-            return func.HttpResponse("Caller name is an error.", status_code=400)
+            return func.HttpResponse(
+                json.dumps({"Status": "Failure", "ErrorMessage": "Caller name is an error."}),
+                status_code=400,
+                mimetype="application/json")
         else:
             callerName = req_body.get('CallerName')
 
-
+    # Get the storage connection string
     __connection_string = os.getenv("AzureWebJobsStorage")
+    logging.info(f"The variable is {__connection_string}")
 
     # This is used for the testing. The test dir will be used variable because
     # in the windows, we have to define one while in the unix prod, the /tmp is used
     # to keep the temporary file.
     __local_dir = os.getenv("AzureFuncLocalDir")
-    
-
-    logging.info(f"The variable is {__connection_string}")
-    #logging.info(f"The variable is {__share_name}")
-    if __local_dir == None: __local_dir = "/tmp"
+    if __local_dir is None:
+        __local_dir = "/tmp"
     logging.info(f"Local dir is {__local_dir}")
 
-    insLogLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir, callerName)
-    insLogLIFEJ.setDBConfig(sqlserver_url, dbname, app_id, client_secret, "")
-    
-    retData = insLogLIFEJ.execute()
-    retData["Status"] = "Success"
+    insReadLIFEJ = readRowLIFEJ(configFile, __connection_string, __local_dir, callerName)
+    insReadLIFEJ.setDBConfig(sqlserver_url, dbname, app_id, client_secret, "")
+
+    retData = insReadLIFEJ.execute()
+
+    if retData['Status'] == "Success":
+        statusCode = 200
 
     return func.HttpResponse(
-            json.dumps(retData),
-            status_code=200,
-            mimetype="application/json"
-        )
-    
+        json.dumps(retData),
+        status_code=statusCode,
+        mimetype="application/json"
+    )
