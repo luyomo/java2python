@@ -8,7 +8,6 @@ import pyodbc
 
 from BTMU_PKG.common.common import Common
 from BTMU_PKG.upload.fetchfromGL import fetchfromGL
-from ..shared_code import Util
 
 logger = logging.getLogger(__name__)
 
