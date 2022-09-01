@@ -8,8 +8,8 @@ import logging
 class fetchfromGL(Common):
     def __init__(self, configFile, storageConnectionStr, localDir):
         super().__init__(configFile, storageConnectionStr, localDir)
-        logging.Debug(f"The config file is {self.configFile}")
-      
+        logging.debug(f"The config file is {self.configFile}")
+
     def execute(self, strFromPayDate, strAPHistory):
         """
         1. Loop all the files from GL_PAYMENT_FOLDER
