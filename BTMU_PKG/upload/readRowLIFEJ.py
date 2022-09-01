@@ -150,20 +150,28 @@ class readRowLIFEJ(Common):
                 if _line['DataType'] == "1":
                     strRowType = "1"
 
-                # Keep the data for new file.
-                vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
+                    # Keep the data for new file.
+                    vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
 
-                # Keep the data for five file mark
-                vecBankCodeFile.append(f"{strProcessDate},{_line['Account']},{strBankCode},")
-                
-                # Replace the cust code/cust name/bank code/bank name in the header from the config file.
-                # This information will be outputed to DB(Not output this replacement to new file)
-                if strBankCode in configData['CUST_BANK_INFO']:
-                    _line['CustCode'] = self.RightPadSpace(configData['CUST_BANK_INFO'][strBankCode]['CustCode'], fileFormatConfig['Header']['CustCode'])
-                    _line['CustName'] = self.RightPadSpace(configData['CUST_BANK_INFO'][strBankCode]['CustName'], fileFormatConfig['Header']['CustName'])
-                    _line['BankCode'] = self.RightPadSpace(configData['CUST_BANK_INFO'][strBankCode]['BankCode'], fileFormatConfig['Header']['BankCode'])
-                    _line['BankName'] = self.RightPadSpace(configData['CUST_BANK_INFO'][strBankCode]['BankName'], fileFormatConfig['Header']['BankName'])
-                _header = _line
+                    # Keep the data for five file mark
+                    vecBankCodeFile.append(f"{strProcessDate},{_line['Account']},{strBankCode},")
+
+                    # Replace the cust code/cust name/bank code/bank name in the header from the config file.
+                    # This information will be outputed to DB(Not output this replacement to new file)
+                    if strBankCode in configData['CUST_BANK_INFO']:
+                        _line['CustCode'] = self.RightPadSpace(
+                            configData['CUST_BANK_INFO'][strBankCode]['CustCode'],
+                            fileFormatConfig['Header']['CustCode'])
+                        _line['CustName'] = self.RightPadSpace(
+                            configData['CUST_BANK_INFO'][strBankCode]['CustName'],
+                            fileFormatConfig['Header']['CustName'])
+                        _line['BankCode'] = self.RightPadSpace(
+                            configData['CUST_BANK_INFO'][strBankCode]['BankCode'],
+                            fileFormatConfig['Header']['BankCode'])
+                        _line['BankName'] = self.RightPadSpace(
+                            configData['CUST_BANK_INFO'][strBankCode]['BankName'],
+                            fileFormatConfig['Header']['BankName'])
+                    _header = _line
 
                 if _line['DataType'] == "2":
                     # If the transfer account code is same to destination
@@ -178,14 +186,15 @@ class readRowLIFEJ(Common):
                         mpSameAccount[fileName] = fileName
 
                         vecDeleteRow.append(
-                            f",{strProcessDate},,{strBankCode},{_header['ProcessDate']},SAME ACCOUNT,1,{_line['Amount']},{self.getLineStr(fileFormatConfig, _line)},")
+                            f",{strProcessDate},,{strBankCode},{_header['ProcessDate']},SAME ACCOUNT,1,\
+                            {_line['Amount']},{self.getLineStr(fileFormatConfig, _line)},")
                         vecTransLog.append(
-                            {"process_date": strProcessDate, 
-                             "bank_code": strBankCode, 
-                             "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']), 
-                             "record_type": "SAME ACCOUNT", 
-                             "row_count": 1, 
-                             "row_amount": _line['Amount'], 
+                            {"process_date": strProcessDate,
+                             "bank_code": strBankCode,
+                             "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']),
+                             "record_type": "SAME ACCOUNT",
+                             "row_count": 1,
+                             "row_amount": _line['Amount'],
                              "row_detail": self.getLineStr(fileFormatConfig, _line)})
                     # If the accout is 0000000
                     elif _line['Account'] == "0000000":
@@ -196,15 +205,16 @@ class readRowLIFEJ(Common):
                         vecALL0Account.append(self.getLineStr(fileFormatConfig, _line))
                         mpAll0[fileName] = fileName
 
-                        vecDeleteRow.append(f",{strProcessDate},,{strBankCode},{_header['ProcessDate']},0000000 ACCOUNT,1,{_line['Amount']}, \
+                        vecDeleteRow.append(f",{strProcessDate},,{strBankCode},{_header['ProcessDate']},\
+                            0000000 ACCOUNT,1,{_line['Amount']}, \
                             {self.getLineStr(fileFormatConfig, _line)},")
                         vecTransLog.append(
-                            {"process_date": strProcessDate, 
-                             "bank_code": strBankCode, 
-                             "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']), 
-                             "record_type": "0000000 ACCOUNT", 
-                             "row_count": 1, 
-                             "row_amount": _line['Amount'], 
+                            {"process_date": strProcessDate,
+                             "bank_code": strBankCode,
+                             "pay_date": self.findYYYYMMDD('20220801', 30, _header['ProcessDate']),
+                             "record_type": "0000000 ACCOUNT",
+                             "row_count": 1,
+                             "row_amount": _line['Amount'],
                              "row_detail": self.getLineStr(fileFormatConfig, _line)})
                         # General case
                     else:
@@ -216,7 +226,8 @@ class readRowLIFEJ(Common):
                         lngSumCount += 1
 
                     # Keep the data to output the data to file
-                    vecRtn.append(f",{strProcessDate},{strBankCode},{_header['ProcessDate']},{self.getLineStr(fileFormatConfig, _line)},{strRowType},")
+                    vecRtn.append(f",{strProcessDate},{strBankCode},{_header['ProcessDate']},\
+                      {self.getLineStr(fileFormatConfig, _line)},{strRowType},")
                     # Todo : replace start date
                     # Keep the data to insert it into dxc.trans_row 
                     vecTransRow.append(
@@ -236,7 +247,7 @@ class readRowLIFEJ(Common):
                     # Nothing but output the data to new file.
                     vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
 
-            # If there is same account and all0 account, overwrite the file. 
+            # If there is same account and all0 account, overwrite the file.
             # Otherwise skip it.
             if len(vecDeleteRow) > 0:
                 self.txtFileWrite(vecNewFile, f"{strLIFEJUrl}/{fileName}", strEncoding)
@@ -333,7 +344,7 @@ class readRowLIFEJ(Common):
             print(f"End handling")
             vecNewFile.append(_strLine)
 
-        self.loopLifeJ(funcHeader, funcBody, funcBodySameAccount, funcBodyAll0, funcTail, funcEnd )
+        self.loopLifeJ(funcHeader, funcBody, funcBodySameAccount, funcBodyAll0, funcTail, funcEnd)
 
         print(f"The processed data is {vecNewFile}")
 
@@ -358,16 +369,16 @@ class readRowLIFEJ(Common):
                 continue
 
             print(f"The file to open is {strLIFEJUrl}/{fileName}")
-         
+
             parsedData = self.parseFile(strFileFormat, f"{strLIFEJUrl}/{fileName}", strEncoding)
-        
+
             _header = {}
             print(f"The parsed data is <{parsedData}>")
             for _line in parsedData:
                 if _line['DataType'] == "1":
                     _header = _line
                     _funcHeader(fileName, strBankCode, _line, self.getLineStr(fileFormatConfig, _line))
-            
+
                 if _line['DataType'] == "2":
                     if _header['BankCode'] == _line['BankCode'] and \
                        _header['BranchCode'] == _line['BranchCode'] and \
@@ -404,7 +415,7 @@ class readRowLIFEJ(Common):
             Sorted array of string
         """
         return dict(sorted(inArr.items(), key=lambda item: f"{item[1][1:2]}{item[1]}")).values()
-      
+
     def fetchLatestRunNum(self):
         def dbExecute(cursor):
             cursor.execute("select 1")
@@ -420,15 +431,19 @@ class readRowLIFEJ(Common):
                 for _idx, _line in enumerate(_data):
                     __query = ""
                     if self.__callerName is None:
-                        __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', '{_line['row_type']}', current_timestamp, current_user)"
+                        __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', \
+                          {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', \
+                          '{_line['row_type']}', current_timestamp, current_user)"
                     else:
-                        __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', '{_line['row_type']}', current_timestamp, '{self.__callerName}')"
+                        __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', \
+                          {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', \
+                          '{_line['row_type']}', current_timestamp, '{self.__callerName}')"
                     logging.info(f"the query is {__query}")
                     cursor.execute(__query)
             except pyodbc.Error as ex:
                 sqlstate = ex.args[0]
                 logging.info(f"Failed on the db: {sqlstate}")
-        
+
         ret = self.executeDB(dbExecute)
         logging.info(f"The result after executeDB is {ret}")
 
@@ -438,14 +453,18 @@ class readRowLIFEJ(Common):
                 for _idx, _line in enumerate(_data):
                     __query = ""
                     if self.__callerName is None:
-                        __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, current_user)"
+                        __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', \
+                          {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', \
+                          {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, current_user)"
                     else:
-                        __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, '{self.__callerName}')"
+                        __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', \
+                          {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', \
+                          {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, '{self.__callerName}')"
                     logging.info(f"the query is {__query}")
                     cursor.execute(__query)
             except pyodbc.Error as ex:
                 sqlstate = ex.args[0]
                 logging.info(f"Failed on the db: {sqlstate}")
-        
+
         ret = self.executeDB(dbExecute)
         logging.info(f"The result after executeDB is {ret}")
