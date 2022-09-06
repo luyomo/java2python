@@ -142,7 +142,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     print(f"The return value is {ret}")
     return func.HttpResponse(
         # json.dumps({"Status": "Success"}),
-        json.dumps(ret),
+        json.dumps(ret, ensure_ascii=False),
         status_code=statusCode,
         mimetype="application/json"
     )
