@@ -6,7 +6,7 @@ from datetime import timedelta
 import pyodbc
 
 
-class readRowLIFEJ(Common):
+class waitFileCounter(Common):
     def __init__(self, configFile, storageConnectionStr, localDir, callerName):
         # super().__init__(configFile, storageConnectionStr, localDir)
         Common.__init__(self, configFile, storageConnectionStr, localDir)
@@ -14,78 +14,6 @@ class readRowLIFEJ(Common):
         self.__callerName = callerName
 
     def execute(self):
-        """
-        1. Read LIGE/J contents
-        2. Loop LOG_LIFEJ_FOLDER
-           ---------- Only loop files
-           2.1 Get the calendar current date
-           2.2 Get the bank code from file name
-           2.3 Open the file
-               ---------- Loop each lines
-               2.3.1 Read the first byte
-                 -> 1
-                   | 2.3.1.1 Get the header pay date/ bank code/ branch code/ account
-                   | 2.3.1.2 Push the detail to vecNewFile vector
-                   | 2.3.1.3 Get the CUST CODE/CUST NAME/BANK CODE/BANK NAME from config file
-                   |         CUSTCODE_J1: 123456789
-                   |         CUSTNAME_J1: xxxxxxxxx
-                   |         BANKCODE_J1: 0001
-                   |         BANKNAME_J1: xxxxxx
-                   | 2.3.1.4 Build the new header and push to new file vector
-                 -> 2
-                   | 2.3.2.1 Get the bank code/branch/account/amount
-                   | 2.3.2.2 If the source and destination of bank/branch/account are same, push it to SameAccount list
-                   | 2.3.2.3 If the account is 0000000, push it to ALL0 list
-                   | 2.3.2.4. If othe case, calculate the amount and count of all the valid row for DB and file
-                   | 2.3.2.4 Push to new file vector
-                 -> 8 do nothing. Continue
-                 -> 9 do nothing. Continue
-               2.3.2 Push the data to return vector
-
-          3. Push the summary record to vecRtn(DB)
-          4. Push the summary record to new file
-          5. Push the last row to vecRtn(DB)
-          6. Push the last row to new file
-          7. Write the new file
-          8. If there is sameAccount rows, write out the records to LOG_FOLDER
-          9. If there is All0 rows, write out the records to LOG_FOLDER
-          10. Write the FILE_FIVE_ACCOUNT
-          11. Prepare the data for email of All0
-          12. Prepare the data for email of SameAccount
-          13. Put the data for DB to mpRtn
-          14. Put the email data to mpRtn
-
-        INPUT:
-          LOG_LOFEJ_FOLDER
-          FILE_WATCH_READ_ENCODING
-        OUTPUT:
-          DB - Return vector
-          New File
-          Same Account Delete file
-          All0 Delete file
-
-        FUNC01: 
-          INPUT: LIFEJ file
-          OUTPUT: bank code file
-        FUNC02:
-          INPUT: LIFEJ file
-          OUTPUT: SAME ACCOUNT/All0 Account/Summary
-        FUNC02:
-          INPUT: LEFEJ
-          OUTPUT: 
-        FUNC03:
-          INPUT: LIFEJ
-          OUTPUT: processdate,bankcode,rowdata,type
-          Example:
-            new header(replace bank code)
-        FUNC04:
-          INPUT: LIFEJ
-          OUTPUT: New LIFEJ (Filter out the All0 and Same Account and calculate all again)
-        FUNC05  
-          "MAIL_ALL0": vecAll0Sort,
-        FUNC06:
-          "MAIL_SAMEACC" : vecSameAccSort
-        """
         vecRtn = []
         vecTransRow = []
         vecTransLog = []
@@ -113,8 +41,11 @@ class readRowLIFEJ(Common):
         vecBankCodeFile = []
         # Used to keep the data to output it file
 
-        files = self.fetchFilesFromDB('20220803', 31)
+        cntFromDB = self.fetchWaitfilesFromDB('20220815', 31)
+        print(f"The count from DB is {cntFromDB}")
         
+        if 1 == 1:
+            return {"Status": "Success"}
         # files = self.listShareFile(strLIFEJUrl)
         # ---------- Loop all the files from the AP directory
         for file in files:
@@ -302,192 +233,24 @@ class readRowLIFEJ(Common):
 
         return vecRtn
 
-    def makeNewLIFEJFile(self):
-        """ Filter out the SameAccount and All0 to make new LIFEJ file and summay
-        """
-        configData = self.readConfig(self.configFile)
-        strFileFormat = configData['FILE_FORMAT']
-
-        fileFormatConfig = self.readConfig(strFileFormat)
-
-        vecNewFile = []
-        lngSumAmount = 0
-        lngSumCount = 0
-
-        def funcHeader(_fileName, _bankCode, _line, _strLine):
-            print(f"Header handling")
-            vecNewFile.append(_strLine)
-
-        def funcBody(_fileName, _bankCode, _line, _strLine):
-            print(f"body  handling")
-            vecNewFile.append(_strLine)
-            lngSumAmount = lngSumAmount + int(_line['Amount'])
-            lngSumCount += 1
-
-        def funcBodySameAccount(_fileName, _bankCode, _line, _strLine):
-            print(f"body - Same account handling")
-
-        def funcBodyAll0(_fileName, _bankCode, _line, _strLine):
-            print(f"body - All0  handling")
-
-        def funcBodySameAccount(_fileName, _bankCode, _line, _strLine):
-            print(f"body - same account  handling")
-
-        def funcBodyAll0(_fileName, _bankCode, _line, _strLine):
-            print(f"body - 000000  handling")
-
-        def funcTail(_fileName, _bankCode, _line, _strLine):
-            print(f"Tail handling")
-            _line['TotalAcount'] = self.LeftPadZero(lngSumCount, fileFormatConfig['Tail']['TotalAcount'])
-            _line['TotalAmount'] = self.LeftPadZero(lngSumAmount, fileFormatConfig['Tail']['TotalAmount'])
-            vecNewFile.append(self.getLineStr(fileFormatConfig, _line))
-
-        def funcEnd(_fileName, _bankCode, _line, _strLine):
-            print(f"End handling")
-            vecNewFile.append(_strLine)
-
-        self.loopLifeJ(funcHeader, funcBody, funcBodySameAccount, funcBodyAll0, funcTail, funcEnd)
-
-        print(f"The processed data is {vecNewFile}")
-
-    def loopLifeJ(self, _funcHeader, _funcBody, _funcBodySameAccount, _funcBodyAll0, _funcTail, _funcEnd):
-        configData = self.readConfig(self.configFile)
-        strLIFEJUrl = configData["LOG_LIFEJ_FOLDER"]
-        strEncoding = configData["FILE_WATCH_READ_ENCODING"]
-        strFileFormat = configData['FILE_FORMAT']
-
-        fileFormatConfig = self.readConfig(strFileFormat)
-
-        files = self.listShareFile(strLIFEJUrl)
-
-        for file in files:
-            fileName = file['name']
-            print(f"The file is {fileName}")
-
-            strBankCode = fileName[0:2]
-            print(f"The bank code is {strBankCode}")
-
-            if strBankCode not in ["J1", "J3", "AC", "AP"]:
-                continue
-
-            print(f"The file to open is {strLIFEJUrl}/{fileName}")
-
-            parsedData = self.parseFile(strFileFormat, f"{strLIFEJUrl}/{fileName}", strEncoding)
-
-            _header = {}
-            print(f"The parsed data is <{parsedData}>")
-            for _line in parsedData:
-                if _line['DataType'] == "1":
-                    _header = _line
-                    _funcHeader(fileName, strBankCode, _line, self.getLineStr(fileFormatConfig, _line))
-
-                if _line['DataType'] == "2":
-                    if _header['BankCode'] == _line['BankCode'] and \
-                       _header['BranchCode'] == _line['BranchCode'] and \
-                       _header['Account'] == _line['Account']:
-                        _funcBodySameAccount(fileName, strBankCode, _line, self.getLineStr(fileFormatConfig, _line))
-                elif _header['Account'] == "0000000":
-                    _funcBodyAll0(fileName, strBankCode, _line, self.getLineStr(fileFormatConfig, _line))
-                else:
-                    _funcBody(fileName, strBankCode, _line, self.getLineStr(fileFormatConfig, _line))
-
-                if _line['DataType'] == "8":
-                    _funcTail(fileName, strBankCode, _line, self.getLineStr(fileFormatConfig, _line))
-
-                if _line['DataType'] == "9":
-                    _funcEnd(fileName, strBankCode, _line, self.getLineStr(fileFormatConfig, _line))
-
-    def getFiveAccounts(self, parsedData):
-        idx = 0
-        strRet = ""
-        for _line in parsedData:
-            if _line['DataType'] != "2":
-                continue
-            idx += 1
-            if idx <= 5:
-                strRet += f",{_line['Account']}|{_line['Amount']}"
-        return strRet
-
-    def sortFile(self, inArr):
-        """ Sort the content as J1->J3->AC->AP
-
-        Args:
-            inArr (_type_): Input string
-        Output:
-            Sorted array of string
-        """
-        return dict(sorted(inArr.items(), key=lambda item: f"{item[1][1:2]}{item[1]}")).values()
-
-    def fetchLatestRunNum(self):
+    def fetchWaitfilesFromDB(self, startDate, theDays):
         def dbExecute(cursor):
-            cursor.execute("select 1")
-            row = cursor.fetchone()
-            logging.info(f"The result inside dbExecute is {row}")
-            return row if row else 0
-        ret = self.executeDB(dbExecute)
-        logging.info(f"The result after executeDB is {ret}")
-
-    def insertTransRow(self, _data):
-        def dbExecute(cursor):
+            # retData = []
             try:
-                for _idx, _line in enumerate(_data):
-                    __query = ""
-                    if self.__callerName is None:
-                        __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', \
-                          {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', \
-                          '{_line['row_type']}', current_timestamp, current_user)"
-                    else:
-                        __query = f"insert into dxc.transbiz_row values('{_line['process_date']}', \
-                          {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', N'{_line['row_detail']}', \
-                          '{_line['row_type']}', current_timestamp, '{self.__callerName}')"
-                    logging.info(f"the query is {__query}")
-                    cursor.execute(__query)
-            except pyodbc.Error as ex:
-                sqlstate = ex.args[0]
-                logging.info(f"Failed on the db: {sqlstate}")
-
-        ret = self.executeDB(dbExecute)
-        logging.info(f"The result after executeDB is {ret}")
-
-    def insertTransLog(self, _data):
-        def dbExecute(cursor):
-            try:
-                for _idx, _line in enumerate(_data):
-                    __query = ""
-                    if self.__callerName is None:
-                        __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', \
-                          {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', \
-                          {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, current_user)"
-                    else:
-                        __query = f"insert into dxc.transbiz_log values('{_line['process_date']}', \
-                          {_idx + 1} , '{_line['bank_code']}', '{_line['pay_date']}', '{_line['record_type']}', \
-                          {_line['row_count']}, {_line['row_amount']}, N'{_line['row_detail']}', current_timestamp, '{self.__callerName}')"
-                    logging.info(f"the query is {__query}")
-                    cursor.execute(__query)
-            except pyodbc.Error as ex:
-                sqlstate = ex.args[0]
-                logging.info(f"Failed on the db: {sqlstate}")
-
-        ret = self.executeDB(dbExecute)
-        logging.info(f"The result after executeDB is {ret}")
-
-    def fetchFilesFromDB(self, startDate, theDays):
-        def dbExecute(cursor):
-            retData = []
-            try:
-                __query = f"select target_date, sign_file_name from dxc.transbiz_his \
+                __query = f"select count(*) as waiting_file from dxc.transbiz_his \
                   where target_date between '{startDate}' and DATEADD(day, {theDays}, '{startDate}') \
-                    and sign_file_name is not null \
-                    and (down_file_name = '' or down_file_name is null) \
-                    and (email_processed = '' or down_file_name is null)"
+                    and (SIGN_STATUS is null OR SIGN_STATUS ='N') \
+                    and email_processed = 'U'"
 
                 logging.info(f"the query is {__query}")
                 cursor.execute(__query)
-                for row in cursor.fetchall():
-                    retData.append({"targetDate": row[0], "name": row[1]})
-                return retData
+                row = cursor.fetchone()
+                print(f"The file format is {row}")
+                return row[0]
+                # return row['waiting_file']
             except pyodbc.Error as ex:
                 sqlstate = ex.args[0]
                 logging.info(f"Failed on the db: {sqlstate}")
 
+        print(f"This is the testing scripts ... ... ")
         return self.executeDB(dbExecute)

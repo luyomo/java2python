@@ -40,9 +40,9 @@ class Common:
         print(f"Original file is {fileName}, share file: {retFileName['shareFile']}, file name: {retFileName['fileName']}")
 
         file_client = ShareFileClient.from_connection_string(conn_str=self.connectionStr, share_name=retFileName['shareFile'], file_path=retFileName['fileName'])
-        retAttr = file_client.get_file_properties()  
+        retAttr = file_client.get_file_properties()
         return retAttr['last_modified'].strftime('%Y/%m/%d %H:%M:%S')
-       
+
     def listShareFile(self, folder):
         retFileName = self.parseFileName(folder)
         print(f"Original file is {folder}, share file: {retFileName['shareFile']}, file name: {retFileName['fileName']}")
@@ -65,7 +65,7 @@ class Common:
             data.readinto(file_handle)
 
         file_dest_client = ShareFileClient.from_connection_string(
-            conn_str=self.connectionStr, 
+            conn_str=self.connectionStr,
             share_name=destRetFileName['shareFile'],
             file_path=destRetFileName['fileName'])
         with open(localFileName, "rb") as source_file:
@@ -108,7 +108,7 @@ class Common:
                 _configData = configData['Tail']
             if _row['DataType'] == "9":
                 _configData = configData['End']
-            
+
             for key in _configData:
                 newFile.write(_row[key])
             newFile.write("\n")
@@ -131,7 +131,7 @@ class Common:
             newFile.write(_row)
             newFile.write("\n")
         newFile.close()
-        
+
         file_dest_client = ShareFileClient.from_connection_string(conn_str=self.connectionStr, share_name=retFileName['shareFile'], file_path=retFileName['fileName'])
         with open(localFileName, "rb") as source_file:
             file_dest_client.upload_file(source_file)
@@ -142,13 +142,13 @@ class Common:
 
     def readConfig(self, configFile):
         print(f" --------------- The file to be parsed <{configFile}>")
-        
+
         downloadFile = self.readShareFile(configFile)
 
         with open(downloadFile,  encoding="utf-8") as file:
             metaData = json.load(file)
 
-        return metaData 
+        return metaData
 
     def parseFile(self, configFile, dataFile, encoding):
         arrayData = []
@@ -281,10 +281,16 @@ class Common:
                 # If MSI is enabled, use MSI as the authentication.
                 conn = pyodbc.connect(connection_string+';Authentication=ActiveDirectoryMsi')
                 logging.info(f'Connection: MSI_SECRET')
+            elif "DBUser" in self.configData:
+                logging.info(f"The connection string is {connection_string}")
+                logging.info(f"User: {self.configData['DBUser']}, password: {self.configData['DBPassword']}")
+                conn = pyodbc.connect('DRIVER={SQL Server}'
+                                      + f";SERVER={self.__sqlserver_url};DATABASE={self.__dbname};UID={self.configData['DBUser']};PWD={self.configData['DBPassword']}")
+                logging.info(f"User/Password login")
             else:
                 # otherwise use odal as the authentication
                 db_token = self.provide_token('https://database.windows.net', self.__app_id, self.__client_secret)
-        
+
                 SQL_COPT_SS_ACCESS_TOKEN = 1256
 
                 exptoken = b''
@@ -306,7 +312,7 @@ class Common:
             cursor.close()
         except pyodbc.Error as ex:
             sqlstate = ex.args[0]
-            logging.info(f"Failed on the db: {sqlstate}")
+            logging.info(f"Failed on the db: {ex}")
         return ret
 
     def FetchDBConn(self):

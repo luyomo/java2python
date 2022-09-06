@@ -61,7 +61,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     insFetch = fetchfromGL(configFile, __connection_string, __local_dir)
     if bizDate is None:
-        return func.HttpResponse( 
+        return func.HttpResponse(
             json.dumps({"Status": "Failure", "ErrorMessage": "Please specify the BizDate like {'BizDate': '20220101'}"}),
             status_code=400,
             mimetype="application/json")
